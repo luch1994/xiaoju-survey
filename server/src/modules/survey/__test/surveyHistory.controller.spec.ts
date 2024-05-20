@@ -6,13 +6,15 @@ import { SurveyHistoryService } from '../services/surveyHistory.service';
 import { SurveyMetaService } from '../services/surveyMeta.service';
 
 import { UserService } from 'src/modules/auth/services/user.service';
-import { Authtication } from 'src/guards/authtication';
 import { AuthService } from 'src/modules/auth/services/auth.service';
+
+jest.mock('src/guards/authentication');
+jest.mock('src/guards/survey');
+jest.mock('src/guards/workspaceRole');
 
 describe('SurveyHistoryController', () => {
   let controller: SurveyHistoryController;
   let surveyHistoryService: SurveyHistoryService;
-  let surveyMetaService: SurveyMetaService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -23,18 +25,6 @@ describe('SurveyHistoryController', () => {
           provide: SurveyHistoryService,
           useClass: jest.fn().mockImplementation(() => ({
             getHistoryList: jest.fn().mockResolvedValue('mockHistoryList'),
-          })),
-        },
-        {
-          provide: SurveyMetaService,
-          useClass: jest.fn().mockImplementation(() => ({
-            checkSurveyAccess: jest.fn().mockResolvedValue({}),
-          })),
-        },
-        {
-          provide: Authtication,
-          useClass: jest.fn().mockImplementation(() => ({
-            canActivate: () => true,
           })),
         },
         {
@@ -53,25 +43,22 @@ describe('SurveyHistoryController', () => {
             },
           })),
         },
+        {
+          provide: SurveyMetaService,
+          useClass: jest.fn().mockImplementation(() => ({})),
+        },
       ],
     }).compile();
 
     controller = module.get<SurveyHistoryController>(SurveyHistoryController);
     surveyHistoryService =
       module.get<SurveyHistoryService>(SurveyHistoryService);
-    surveyMetaService = module.get<SurveyMetaService>(SurveyMetaService);
   });
 
   it('should return history list when query is valid', async () => {
-    const req = { user: { username: 'testUser' } };
     const queryInfo = { surveyId: 'survey123', historyType: 'published' };
 
-    await controller.getList(queryInfo, req);
-
-    expect(surveyMetaService.checkSurveyAccess).toHaveBeenCalledWith({
-      surveyId: queryInfo.surveyId,
-      username: req.user.username,
-    });
+    await controller.getList(queryInfo);
 
     expect(surveyHistoryService.getHistoryList).toHaveBeenCalledWith({
       surveyId: queryInfo.surveyId,
@@ -79,6 +66,5 @@ describe('SurveyHistoryController', () => {
     });
 
     expect(surveyHistoryService.getHistoryList).toHaveBeenCalledTimes(1);
-    expect(surveyMetaService.checkSurveyAccess).toHaveBeenCalledTimes(1);
   });
 });

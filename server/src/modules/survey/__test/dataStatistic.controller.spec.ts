@@ -9,7 +9,7 @@ import { ResponseSchemaService } from '../../surveyResponse/services/responseSch
 
 import { PluginManagerProvider } from 'src/securityPlugin/pluginManager.provider';
 import { XiaojuSurveyPluginManager } from 'src/securityPlugin/pluginManager';
-import { Authtication } from 'src/guards/authtication';
+
 import { UserService } from 'src/modules/auth/services/user.service';
 import { ResponseSecurityPlugin } from 'src/securityPlugin/responseSecurityPlugin';
 import { AuthService } from 'src/modules/auth/services/auth.service';
@@ -18,10 +18,13 @@ jest.mock('../services/dataStatistic.service');
 jest.mock('../services/surveyMeta.service');
 jest.mock('../../surveyResponse/services/responseScheme.service');
 
+jest.mock('src/guards/authentication');
+jest.mock('src/guards/survey');
+jest.mock('src/guards/workspaceRole');
+
 describe('DataStatisticController', () => {
   let controller: DataStatisticController;
   let dataStatisticService: DataStatisticService;
-  let surveyMetaService: SurveyMetaService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -32,12 +35,6 @@ describe('DataStatisticController', () => {
         ResponseSchemaService,
         PluginManagerProvider,
         ConfigService,
-        {
-          provide: Authtication,
-          useClass: jest.fn().mockImplementation(() => ({
-            canActivate: () => true,
-          })),
-        },
         {
           provide: UserService,
           useClass: jest.fn().mockImplementation(() => ({
@@ -60,7 +57,6 @@ describe('DataStatisticController', () => {
     controller = module.get<DataStatisticController>(DataStatisticController);
     dataStatisticService =
       module.get<DataStatisticService>(DataStatisticService);
-    surveyMetaService = module.get<SurveyMetaService>(SurveyMetaService);
     const pluginManager = module.get<XiaojuSurveyPluginManager>(
       XiaojuSurveyPluginManager,
     );
@@ -102,16 +98,13 @@ describe('DataStatisticController', () => {
       };
 
       jest
-        .spyOn(surveyMetaService, 'checkSurveyAccess')
-        .mockResolvedValueOnce(undefined);
-      jest
         .spyOn(controller['responseSchemaService'], 'getResponseSchemaByPageId')
         .mockResolvedValueOnce({} as any);
       jest
         .spyOn(dataStatisticService, 'getDataTable')
         .mockResolvedValueOnce(mockDataTable);
 
-      const result = await controller.data(mockRequest.query, mockRequest);
+      const result = await controller.data(mockRequest.query);
 
       expect(result).toEqual({
         code: 200,
@@ -146,10 +139,6 @@ describe('DataStatisticController', () => {
           { difTime: '0.5', createDate: '2024-02-11', data123: '13800000000' },
         ],
       };
-
-      jest
-        .spyOn(surveyMetaService, 'checkSurveyAccess')
-        .mockResolvedValueOnce(undefined);
       jest
         .spyOn(controller['responseSchemaService'], 'getResponseSchemaByPageId')
         .mockResolvedValueOnce({} as any);
@@ -157,7 +146,7 @@ describe('DataStatisticController', () => {
         .spyOn(dataStatisticService, 'getDataTable')
         .mockResolvedValueOnce(mockDataTable);
 
-      const result = await controller.data(mockRequest.query, mockRequest);
+      const result = await controller.data(mockRequest.query);
 
       expect(result).toEqual({
         code: 200,

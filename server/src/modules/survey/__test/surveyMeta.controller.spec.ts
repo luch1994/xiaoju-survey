@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SurveyMetaController } from '../controllers/surveyMeta.controller';
 import { SurveyMetaService } from '../services/surveyMeta.service';
-import { Authtication } from 'src/guards/authtication';
-import { SurveyMeta } from 'src/models/surveyMeta.entity';
 import { LoggerProvider } from 'src/logger/logger.provider';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
+
+jest.mock('src/guards/authentication');
+jest.mock('src/guards/survey');
+jest.mock('src/guards/workspaceRole');
 
 describe('SurveyMetaController', () => {
   let controller: SurveyMetaController;
@@ -18,7 +20,6 @@ describe('SurveyMetaController', () => {
         {
           provide: SurveyMetaService,
           useValue: {
-            checkSurveyAccess: jest.fn().mockResolvedValue({}),
             editSurveyMeta: jest.fn().mockResolvedValue(undefined),
             getSurveyMetaList: jest
               .fn()
@@ -27,12 +28,7 @@ describe('SurveyMetaController', () => {
         },
         LoggerProvider,
       ],
-    })
-      .overrideGuard(Authtication)
-      .useValue({
-        canActivate: () => true,
-      })
-      .compile();
+    }).compile();
 
     controller = module.get<SurveyMetaController>(SurveyMetaController);
     surveyMetaService = module.get<SurveyMetaService>(SurveyMetaService);
@@ -44,29 +40,20 @@ describe('SurveyMetaController', () => {
       title: 'Test title',
       surveyId: 'test-survey-id',
     };
-    const req = {
-      user: {
-        username: 'test-user',
-      },
-    };
 
     const survey = {
       title: '',
       remark: '',
     };
 
-    jest
-      .spyOn(surveyMetaService, 'checkSurveyAccess')
-      .mockImplementation(() => {
-        return Promise.resolve(survey) as Promise<SurveyMeta>;
-      });
+    const req = {
+      user: {
+        username: 'test-user',
+      },
+      surveyMeta: survey,
+    };
 
     const result = await controller.updateMeta(reqBody, req);
-
-    expect(surveyMetaService.checkSurveyAccess).toHaveBeenCalledWith({
-      surveyId: reqBody.surveyId,
-      username: req.user.username,
-    });
 
     expect(surveyMetaService.editSurveyMeta).toHaveBeenCalledWith({
       title: reqBody.title,
@@ -91,7 +78,6 @@ describe('SurveyMetaController', () => {
       expect(error.code).toBe(EXCEPTION_CODE.PARAMETER_ERROR);
     }
 
-    expect(surveyMetaService.checkSurveyAccess).not.toHaveBeenCalled();
     expect(surveyMetaService.editSurveyMeta).not.toHaveBeenCalled();
   });
 

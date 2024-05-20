@@ -4,9 +4,7 @@ import { MongoRepository, FindOptionsOrder } from 'typeorm';
 import { SurveyMeta } from 'src/models/surveyMeta.entity';
 import { RECORD_STATUS } from 'src/enums';
 import { ObjectId } from 'mongodb';
-import { NoSurveyPermissionException } from 'src/exceptions/noSurveyPermissionException';
 import { HttpException } from 'src/exceptions/httpException';
-import { SurveyNotFoundException } from 'src/exceptions/surveyNotFoundException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
 import { XiaojuSurveyPluginManager } from 'src/securityPlugin/pluginManager';
 
@@ -34,18 +32,10 @@ export class SurveyMetaService {
     return surveyPath;
   }
 
-  async checkSurveyAccess({ surveyId, username }) {
-    const survey = await this.surveyRepository.findOne({
+  async getSurveyById({ surveyId }) {
+    return this.surveyRepository.findOne({
       where: { _id: new ObjectId(surveyId) },
     });
-
-    if (!survey) {
-      throw new SurveyNotFoundException('问卷不存在');
-    }
-    if (survey.owner !== username) {
-      throw new NoSurveyPermissionException('没有权限');
-    }
-    return survey;
   }
 
   async createSurveyMeta(params: {

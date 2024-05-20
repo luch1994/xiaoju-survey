@@ -7,7 +7,10 @@ import {
   HttpCode,
   UseGuards,
   Request,
+  SetMetadata,
 } from '@nestjs/common';
+import * as Joi from 'joi';
+import { ApiTags } from '@nestjs/swagger';
 
 import { SurveyMetaService } from '../services/surveyMeta.service';
 import { SurveyConfService } from '../services/surveyConf.service';
@@ -16,14 +19,18 @@ import { ContentSecurityService } from '../services/contentSecurity.service';
 import { SurveyHistoryService } from '../services/surveyHistory.service';
 
 import BannerData from '../template/banner/index.json';
+import { CreateSurveyDto } from '../dto/createSurvey.dto';
 
-import * as Joi from 'joi';
-import { ApiTags } from '@nestjs/swagger';
-import { Authtication } from 'src/guards/authtication';
+import { Authentication } from 'src/guards/authentication';
 import { HISTORY_TYPE } from 'src/enums';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
 import { Logger } from 'src/logger';
+import { SurveyGuard } from 'src/guards/survey';
+import { SurveyPermission } from 'src/enums/surveyPermission';
+
+import { WorkspaceRoleGuard } from 'src/guards/workspaceRole';
+import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
 
 @ApiTags('survey')
 @Controller('/api/survey')
@@ -46,51 +53,38 @@ export class SurveyController {
     };
   }
 
-  @UseGuards(Authtication)
+  @UseGuards(Authentication)
   @Post('/createSurvey')
   @HttpCode(200)
+  @UseGuards(SurveyGuard)
+  @SetMetadata('surveyId', 'body.surveyId')
+  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_CONF_MANAGE])
+  @UseGuards(WorkspaceRoleGuard)
+  @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN, WorkspaceRole.USER])
+  @SetMetadata('workspaceId', { key: 'body.workspaceId', optional: true })
   async createSurvey(
     @Body()
-    reqBody,
+    reqBody: CreateSurveyDto,
     @Request()
     req,
   ) {
-    let validationResult;
-    try {
-      validationResult = await Joi.object({
-        title: Joi.string().required(),
-        remark: Joi.string().allow(null, '').default(''),
-        surveyType: Joi.string().when('createMethod', {
-          is: 'copy',
-          then: Joi.allow(null),
-          otherwise: Joi.required(),
-        }),
-        createMethod: Joi.string().allow(null).default('basic'),
-        createFrom: Joi.string().when('createMethod', {
-          is: 'copy',
-          then: Joi.required(),
-          otherwise: Joi.allow(null),
-        }),
-      }).validateAsync(reqBody);
-    } catch (error) {
+    const { error, value } = CreateSurveyDto.validate(reqBody);
+    if (error) {
       this.logger.error(`createSurvey_parameter error: ${error.message}`, {
         req,
       });
       throw new HttpException('参数错误', EXCEPTION_CODE.PARAMETER_ERROR);
     }
 
-    const { title, remark, createMethod, createFrom } = validationResult;
+    const { title, remark, createMethod, createFrom } = value;
 
     const username = req.user.username;
     let surveyType = '';
     if (createMethod === 'copy') {
-      const survey = await this.surveyMetaService.checkSurveyAccess({
-        surveyId: createFrom,
-        username,
-      });
+      const survey = req.surveyMeta;
       surveyType = survey.surveyType;
     } else {
-      surveyType = validationResult.surveyType;
+      surveyType = value.surveyType;
     }
 
     const surveyMeta = await this.surveyMetaService.createSurveyMeta({
@@ -104,8 +98,8 @@ export class SurveyController {
     await this.surveyConfService.createSurveyConf({
       surveyId: surveyMeta._id.toString(),
       surveyType: surveyType,
-      createMethod: validationResult.createMethod,
-      createFrom: validationResult.createFrom,
+      createMethod: value.createMethod,
+      createFrom: value.createFrom,
     });
     return {
       code: 200,
@@ -115,9 +109,12 @@ export class SurveyController {
     };
   }
 
-  @UseGuards(Authtication)
   @Post('/updateConf')
   @HttpCode(200)
+  @UseGuards(SurveyGuard)
+  @SetMetadata('surveyId', 'body.surveyId')
+  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_CONF_MANAGE])
+  @UseGuards(Authentication)
   async updateConf(
     @Body()
     surveyInfo,
@@ -130,10 +127,7 @@ export class SurveyController {
     }).validateAsync(surveyInfo);
     const username = req.user.username;
     const surveyId = validationResult.surveyId;
-    await this.surveyMetaService.checkSurveyAccess({
-      surveyId,
-      username,
-    });
+
     const configData = validationResult.configData;
     await this.surveyConfService.saveSurveyConf({
       surveyId,
@@ -153,23 +147,18 @@ export class SurveyController {
     };
   }
 
-  @UseGuards(Authtication)
   @HttpCode(200)
   @Post('/deleteSurvey')
-  async deleteSurvey(@Body() reqBody, @Request() req) {
-    const validationResult = await Joi.object({
-      surveyId: Joi.string().required(),
-    }).validateAsync(reqBody, { allowUnknown: true });
-    const username = req.user.username;
-    const surveyId = validationResult.surveyId;
-    const survey = await this.surveyMetaService.checkSurveyAccess({
-      surveyId,
-      username,
-    });
+  @UseGuards(SurveyGuard)
+  @SetMetadata('surveyId', 'body.surveyId')
+  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_CONF_MANAGE])
+  @UseGuards(Authentication)
+  async deleteSurvey(@Request() req) {
+    const surveyMeta = req.surveyMeta;
 
-    await this.surveyMetaService.deleteSurveyMeta(survey);
+    await this.surveyMetaService.deleteSurveyMeta(surveyMeta);
     await this.responseSchemaService.deleteResponseSchema({
-      surveyPath: survey.surveyPath,
+      surveyPath: surveyMeta.surveyPath,
     });
 
     return {
@@ -177,9 +166,12 @@ export class SurveyController {
     };
   }
 
-  @UseGuards(Authtication)
   @Get('/getSurvey')
   @HttpCode(200)
+  @UseGuards(SurveyGuard)
+  @SetMetadata('surveyId', 'query.surveyId')
+  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_CONF_MANAGE])
+  @UseGuards(Authentication)
   async getSurvey(
     @Query()
     queryInfo: {
@@ -192,12 +184,8 @@ export class SurveyController {
       surveyId: Joi.string().required(),
     }).validateAsync(queryInfo);
 
-    const username = req.user.username;
     const surveyId = validationResult.surveyId;
-    const surveyMeta = await this.surveyMetaService.checkSurveyAccess({
-      surveyId,
-      username,
-    });
+    const surveyMeta = req.surveyMeta;
     const surveyConf =
       await this.surveyConfService.getSurveyConfBySurveyId(surveyId);
 
@@ -210,9 +198,12 @@ export class SurveyController {
     };
   }
 
-  @UseGuards(Authtication)
   @Post('/publishSurvey')
   @HttpCode(200)
+  @UseGuards(SurveyGuard)
+  @SetMetadata('surveyId', 'body.surveyId')
+  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_CONF_MANAGE])
+  @UseGuards(Authentication)
   async publishSurvey(
     @Body()
     surveyInfo,
@@ -224,10 +215,7 @@ export class SurveyController {
     }).validateAsync(surveyInfo);
     const username = req.user.username;
     const surveyId = validationResult.surveyId;
-    const surveyMeta = await this.surveyMetaService.checkSurveyAccess({
-      surveyId,
-      username,
-    });
+    const surveyMeta = req.surveyMeta;
     const surveyConf =
       await this.surveyConfService.getSurveyConfBySurveyId(surveyId);
 

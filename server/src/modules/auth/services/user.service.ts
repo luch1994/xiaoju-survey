@@ -56,4 +56,13 @@ export class UserService {
 
     return user;
   }
+
+  async getuserListByUsername(username) {
+    const list = await this.userRepository.find({
+      where: {
+        username,
+      },
+    });
+    return list;
+  }
 }

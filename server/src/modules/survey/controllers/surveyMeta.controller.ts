@@ -7,18 +7,23 @@ import {
   HttpCode,
   UseGuards,
   Request,
+  SetMetadata,
 } from '@nestjs/common';
 import * as Joi from 'joi';
 import moment from 'moment';
 import { ApiTags } from '@nestjs/swagger';
 
+import { SurveyMetaService } from '../services/surveyMeta.service';
+
 import { getFilter, getOrder } from 'src/utils/surveyUtil';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
-import { Authtication } from 'src/guards/authtication';
+import { Authentication } from 'src/guards/authentication';
 import { Logger } from 'src/logger';
-
-import { SurveyMetaService } from '../services/surveyMeta.service';
+import { SurveyGuard } from 'src/guards/survey';
+import { SurveyPermission } from 'src/enums/surveyPermission';
+import { WorkspaceRoleGuard } from 'src/guards/workspaceRole';
+import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
 
 @ApiTags('survey')
 @Controller('/api/survey')
@@ -28,9 +33,12 @@ export class SurveyMetaController {
     private readonly logger: Logger,
   ) {}
 
-  @UseGuards(Authtication)
   @Post('/updateMeta')
   @HttpCode(200)
+  @UseGuards(SurveyGuard)
+  @SetMetadata('surveyId', 'body.surveyId')
+  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_DATA_MANAGE])
+  @UseGuards(Authentication)
   async updateMeta(@Body() reqBody, @Request() req) {
     let validationResult;
     try {
@@ -46,12 +54,7 @@ export class SurveyMetaController {
       throw new HttpException('参数错误', EXCEPTION_CODE.PARAMETER_ERROR);
     }
 
-    const username = req.user.username;
-    const surveyId = validationResult.surveyId;
-    const survey = await this.surveyMetaService.checkSurveyAccess({
-      surveyId,
-      username,
-    });
+    const survey = req.surveyMeta;
     survey.title = validationResult.title;
     survey.remark = validationResult.remark;
 
@@ -62,7 +65,10 @@ export class SurveyMetaController {
     };
   }
 
-  @UseGuards(Authtication)
+  @UseGuards(WorkspaceRoleGuard)
+  @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN, WorkspaceRole.USER])
+  @SetMetadata('workspaceId', { optional: true, key: 'query.workspaceId' })
+  @UseGuards(Authentication)
   @Get('/getList')
   @HttpCode(200)
   async getList(
