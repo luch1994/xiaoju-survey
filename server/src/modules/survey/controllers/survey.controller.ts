@@ -21,15 +21,15 @@ import { SurveyHistoryService } from '../services/surveyHistory.service';
 import BannerData from '../template/banner/index.json';
 import { CreateSurveyDto } from '../dto/createSurvey.dto';
 
-import { Authentication } from 'src/guards/authentication';
+import { Authentication } from 'src/guards/authentication.guard';
 import { HISTORY_TYPE } from 'src/enums';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
 import { Logger } from 'src/logger';
-import { SurveyGuard } from 'src/guards/survey';
+import { SurveyGuard } from 'src/guards/survey.guard';
 import { SurveyPermission } from 'src/enums/surveyPermission';
 
-import { WorkspaceRoleGuard } from 'src/guards/workspaceRole';
+import { WorkspaceGuard } from 'src/guards/workspace.guard';
 import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
 
 @ApiTags('survey')
@@ -59,7 +59,7 @@ export class SurveyController {
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'body.surveyId')
   @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_CONF_MANAGE])
-  @UseGuards(WorkspaceRoleGuard)
+  @UseGuards(WorkspaceGuard)
   @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN, WorkspaceRole.USER])
   @SetMetadata('workspaceId', { key: 'body.workspaceId', optional: true })
   async createSurvey(

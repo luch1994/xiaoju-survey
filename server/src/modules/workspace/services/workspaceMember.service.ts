@@ -61,6 +61,19 @@ export class WorkspaceMemberService {
     );
   }
 
+  async batchDelete({ idList }: { idList: Array<string> }) {
+    if (idList.length === 0) {
+      return {
+        modifiedCount: 0,
+      };
+    }
+    return this.workspaceMemberRepository.deleteMany({
+      _id: {
+        $in: idList.map((item) => new ObjectId(item)),
+      },
+    });
+  }
+
   async findAllByUserId({ userId }): Promise<WorkspaceMember[]> {
     return this.workspaceMemberRepository.find({
       where: {

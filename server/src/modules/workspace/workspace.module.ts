@@ -15,7 +15,7 @@ import { SurveyMeta } from 'src/models/surveyMeta.entity';
 import { AuthModule } from '../auth/auth.module';
 
 import { LoggerProvider } from 'src/logger/logger.provider';
-import { WorkspaceRoleGuard } from 'src/guards/workspaceRole';
+import { WorkspaceGuard } from 'src/guards/workspace.guard';
 
 @Module({
   imports: [
@@ -28,7 +28,7 @@ import { WorkspaceRoleGuard } from 'src/guards/workspaceRole';
     WorkspaceService,
     WorkspaceMemberService,
     LoggerProvider,
-    WorkspaceRoleGuard,
+    WorkspaceGuard,
   ],
   exports: [WorkspaceMemberService],
 })

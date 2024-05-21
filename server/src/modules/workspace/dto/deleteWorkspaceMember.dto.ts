@@ -8,10 +8,10 @@ export class DeleteWorkspaceMemberDto {
   @ApiProperty({ description: '用户id', required: false })
   userId: string;
 
-  static async validate(data) {
-    return await Joi.object({
+  static validate(data) {
+    return Joi.object({
       workspaceId: Joi.string().required(),
       userId: Joi.string().required(),
-    }).validateAsync(data);
+    }).validate(data);
   }
 }

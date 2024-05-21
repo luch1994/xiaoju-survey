@@ -18,11 +18,11 @@ import { SurveyMetaService } from '../services/surveyMeta.service';
 import { getFilter, getOrder } from 'src/utils/surveyUtil';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
-import { Authentication } from 'src/guards/authentication';
+import { Authentication } from 'src/guards/authentication.guard';
 import { Logger } from 'src/logger';
-import { SurveyGuard } from 'src/guards/survey';
+import { SurveyGuard } from 'src/guards/survey.guard';
 import { SurveyPermission } from 'src/enums/surveyPermission';
-import { WorkspaceRoleGuard } from 'src/guards/workspaceRole';
+import { WorkspaceGuard } from 'src/guards/workspace.guard';
 import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
 
 @ApiTags('survey')
@@ -65,7 +65,7 @@ export class SurveyMetaController {
     };
   }
 
-  @UseGuards(WorkspaceRoleGuard)
+  @UseGuards(WorkspaceGuard)
   @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN, WorkspaceRole.USER])
   @SetMetadata('workspaceId', { optional: true, key: 'query.workspaceId' })
   @UseGuards(Authentication)

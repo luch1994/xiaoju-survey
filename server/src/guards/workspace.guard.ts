@@ -7,7 +7,7 @@ import { AuthenticationException } from '../exceptions/authException';
 import { WorkspaceMemberService } from 'src/modules/workspace/services/workspaceMember.service';
 
 @Injectable()
-export class WorkspaceRoleGuard implements CanActivate {
+export class WorkspaceGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private readonly workspaceMemberService: WorkspaceMemberService,

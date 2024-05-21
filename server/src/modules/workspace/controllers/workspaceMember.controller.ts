@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Body,
   UseGuards,
   Request,
@@ -10,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
-import { Authentication } from 'src/guards/authentication';
-import { WorkspaceRoleGuard } from 'src/guards/workspaceRole';
+import { Authentication } from 'src/guards/authentication.guard';
+import { WorkspaceGuard } from 'src/guards/workspace.guard';
 
 import { WorkspaceMemberService } from '../services/workspaceMember.service';
 
@@ -25,7 +24,7 @@ import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
 
 @ApiTags('workspaceMember')
 @ApiBearerAuth()
-@UseGuards(WorkspaceRoleGuard)
+@UseGuards(WorkspaceGuard)
 @UseGuards(Authentication)
 @Controller('workspaceMember')
 export class WorkspaceMemberController {
@@ -75,7 +74,7 @@ export class WorkspaceMemberController {
     };
   }
 
-  @Put('updateRole')
+  @Post('updateRole')
   @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN])
   @SetMetadata('workspaceId', 'body.workspaceId')
   async updateRole(@Body() updateDto: UpdateWorkspaceMemberDto) {
@@ -103,16 +102,14 @@ export class WorkspaceMemberController {
   @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN])
   @SetMetadata('workspaceId', 'body.id')
   async delete(@Body() deleteDto: DeleteWorkspaceMemberDto) {
-    let data;
-    try {
-      data = await DeleteWorkspaceMemberDto.validate(deleteDto);
-    } catch (error) {
+    const { value, error } = DeleteWorkspaceMemberDto.validate(deleteDto);
+    if (error) {
       throw new HttpException(
         `参数错误: ${error.message}`,
         EXCEPTION_CODE.PARAMETER_ERROR,
       );
     }
-    const res = await this.workspaceMemberService.deleteMember({ ...data });
+    const res = await this.workspaceMemberService.deleteMember({ ...value });
     return {
       code: 200,
       data: {

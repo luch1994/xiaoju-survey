@@ -12,8 +12,8 @@ import {
 import { ObjectId } from 'mongodb';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
-import { Authentication } from 'src/guards/authentication';
-import { WorkspaceRoleGuard } from 'src/guards/workspaceRole';
+import { Authentication } from 'src/guards/authentication.guard';
+import { WorkspaceGuard } from 'src/guards/workspace.guard';
 
 import { WorkspaceService } from '../services/workspace.service';
 import { WorkspaceMemberService } from '../services/workspaceMember.service';
@@ -89,19 +89,39 @@ export class WorkspaceController {
     };
   }
 
+  @Get(':id')
+  @UseGuards(WorkspaceGuard)
+  @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN, WorkspaceRole.USER])
+  @SetMetadata('workspaceId', 'params.id')
+  async getWorkspaceInfo(@Param('id') workspaceId: string) {
+    const workspaceInfo = await this.workspaceService.findOneById(workspaceId);
+    const members = await this.workspaceMemberService.findAllByWorkspaceId({
+      workspaceId,
+    });
+    return {
+      code: 200,
+      data: {
+        _id: workspaceInfo._id,
+        name: workspaceInfo.name,
+        description: workspaceInfo.description,
+        members,
+      },
+    };
+  }
+
   @Post(':id')
-  @UseGuards(WorkspaceRoleGuard)
+  @UseGuards(WorkspaceGuard)
   @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN])
   @SetMetadata('workspaceId', 'params.id')
-  async update(
-    @Param('id') id: string,
-    @Body() workspace: Partial<CreateWorkspaceDto>,
-  ) {
+  async update(@Param('id') id: string, @Body() workspace: CreateWorkspaceDto) {
     const members = workspace.members;
     delete workspace.members;
     const updateRes = await this.workspaceService.update(id, workspace);
     const { newMembers, adminMembers, userMembers } = splitMembers(members);
+    const allIds = [...adminMembers, ...userMembers];
+    // 新增和更新成员,把数据库里已删除的成员删掉
     await Promise.all([
+      this.workspaceMemberService.batchDelete({ idList: allIds }),
       this.workspaceMemberService.batchCreate({
         workspaceId: id,
         members: newMembers,
@@ -124,7 +144,7 @@ export class WorkspaceController {
   }
 
   @Delete(':id')
-  @UseGuards(WorkspaceRoleGuard)
+  @UseGuards(WorkspaceGuard)
   @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN])
   @SetMetadata('workspaceId', 'params.id')
   async delete(@Param('id') id: string) {

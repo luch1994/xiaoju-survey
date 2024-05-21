@@ -12,8 +12,8 @@ import { ApiTags } from '@nestjs/swagger';
 import { SurveyHistoryService } from '../services/surveyHistory.service';
 import { SurveyMetaService } from '../services/surveyMeta.service';
 
-import { Authentication } from 'src/guards/authentication';
-import { SurveyGuard } from 'src/guards/survey';
+import { Authentication } from 'src/guards/authentication.guard';
+import { SurveyGuard } from 'src/guards/survey.guard';
 import { SurveyPermission } from 'src/enums/surveyPermission';
 
 @ApiTags('survey')

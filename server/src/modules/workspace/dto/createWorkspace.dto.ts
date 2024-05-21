@@ -10,7 +10,7 @@ export class CreateWorkspaceDto {
   description?: string;
 
   @ApiProperty({ description: '空间成员', required: true })
-  members: Array<{ userId: string; role: WorkspaceRole }>;
+  members: Array<{ userId: string; role: WorkspaceRole; _id?: string }>;
 
   static validate(data) {
     return Joi.object({

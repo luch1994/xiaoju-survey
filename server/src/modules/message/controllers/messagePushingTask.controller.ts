@@ -25,7 +25,7 @@ import { QueryMessagePushingTaskListDto } from '../dto/queryMessagePushingTaskLi
 
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
-import { Authentication } from 'src/guards/authentication';
+import { Authentication } from 'src/guards/authentication.guard';
 
 @UseGuards(Authentication)
 @ApiBearerAuth()

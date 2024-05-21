@@ -28,6 +28,14 @@ export class WorkspaceService {
     return this.workspaceRepository.save(newWorkspace);
   }
 
+  async findOneById(id) {
+    return this.workspaceRepository.findOne({
+      where: {
+        _id: new ObjectId(id),
+      },
+    });
+  }
+
   async findAllById({
     workspaceIdList,
   }: {

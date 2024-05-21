@@ -18,9 +18,9 @@ jest.mock('../services/dataStatistic.service');
 jest.mock('../services/surveyMeta.service');
 jest.mock('../../surveyResponse/services/responseScheme.service');
 
-jest.mock('src/guards/authentication');
-jest.mock('src/guards/survey');
-jest.mock('src/guards/workspaceRole');
+jest.mock('src/guards/authentication.guard');
+jest.mock('src/guards/survey.guard');
+jest.mock('src/guards/workspace.guard');
 
 describe('DataStatisticController', () => {
   let controller: DataStatisticController;

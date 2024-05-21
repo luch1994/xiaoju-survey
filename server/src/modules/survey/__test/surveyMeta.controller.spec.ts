@@ -5,9 +5,9 @@ import { LoggerProvider } from 'src/logger/logger.provider';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
 
-jest.mock('src/guards/authentication');
-jest.mock('src/guards/survey');
-jest.mock('src/guards/workspaceRole');
+jest.mock('src/guards/authentication.guard');
+jest.mock('src/guards/survey.guard');
+jest.mock('src/guards/workspace.guard');
 
 describe('SurveyMetaController', () => {
   let controller: SurveyMetaController;

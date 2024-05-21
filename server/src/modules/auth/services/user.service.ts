@@ -57,11 +57,13 @@ export class UserService {
     return user;
   }
 
-  async getuserListByUsername(username) {
+  async getUserListByUsername({ username, skip, take }) {
     const list = await this.userRepository.find({
       where: {
         username,
       },
+      skip,
+      take,
     });
     return list;
   }

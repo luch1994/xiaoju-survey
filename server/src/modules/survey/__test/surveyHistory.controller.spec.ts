@@ -8,9 +8,9 @@ import { SurveyMetaService } from '../services/surveyMeta.service';
 import { UserService } from 'src/modules/auth/services/user.service';
 import { AuthService } from 'src/modules/auth/services/auth.service';
 
-jest.mock('src/guards/authentication');
-jest.mock('src/guards/survey');
-jest.mock('src/guards/workspaceRole');
+jest.mock('src/guards/authentication.guard');
+jest.mock('src/guards/survey.guard');
+jest.mock('src/guards/workspace.guard');
 
 describe('SurveyHistoryController', () => {
   let controller: SurveyHistoryController;

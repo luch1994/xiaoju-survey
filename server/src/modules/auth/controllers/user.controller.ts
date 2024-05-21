@@ -1,13 +1,13 @@
 import { Controller, Get, Query, HttpCode, UseGuards } from '@nestjs/common';
 
-import * as Joi from 'joi';
 import { ApiTags } from '@nestjs/swagger';
-import { Authentication } from 'src/guards/authentication';
+import { Authentication } from 'src/guards/authentication.guard';
 
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
 import { HttpException } from 'src/exceptions/httpException';
 
 import { UserService } from '../services/user.service';
+import { GetUserListDto } from '../dto/getUserList.dto';
 
 @ApiTags('user')
 @Controller('/api/user')
@@ -19,18 +19,18 @@ export class UserController {
   @HttpCode(200)
   async getUserList(
     @Query()
-    queryInfo,
+    queryInfo: GetUserListDto,
   ) {
-    const { value, error } = Joi.object({
-      username: Joi.string().required(),
-    }).validate(queryInfo);
+    const { value, error } = GetUserListDto.validate(queryInfo);
     if (error) {
       throw new HttpException('参数有误', EXCEPTION_CODE.PARAMETER_ERROR);
     }
 
-    const userList = await this.userService.getuserListByUsername(
-      value.username,
-    );
+    const userList = await this.userService.getUserListByUsername({
+      username: value.username,
+      skip: (value.pageIndex - 1) * value.pageSize,
+      take: value.pageSize,
+    });
 
     return {
       code: 200,

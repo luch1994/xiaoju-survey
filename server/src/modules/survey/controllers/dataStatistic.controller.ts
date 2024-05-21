@@ -13,9 +13,9 @@ import { DataStatisticService } from '../services/dataStatistic.service';
 import { SurveyMetaService } from '../services/surveyMeta.service';
 import { ResponseSchemaService } from '../../surveyResponse/services/responseScheme.service';
 
-import { Authentication } from 'src/guards/authentication';
+import { Authentication } from 'src/guards/authentication.guard';
 import { XiaojuSurveyPluginManager } from 'src/securityPlugin/pluginManager';
-import { SurveyGuard } from 'src/guards/survey';
+import { SurveyGuard } from 'src/guards/survey.guard';
 import { SurveyPermission } from 'src/enums/surveyPermission';
 
 @ApiTags('survey')

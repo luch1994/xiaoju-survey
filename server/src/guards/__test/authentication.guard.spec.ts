@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { Authentication } from './authentication';
+import { Authentication } from '../authentication.guard';
 import { AuthService } from 'src/modules/auth/services/auth.service';
 import { AuthenticationException } from 'src/exceptions/authException';
 import { User } from 'src/models/user.entity';

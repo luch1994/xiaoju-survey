@@ -11,10 +11,10 @@ import {
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import * as Joi from 'joi';
 
-import { Authentication } from 'src/guards/authentication';
+import { Authentication } from 'src/guards/authentication.guard';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
-import { SurveyGuard } from 'src/guards/survey';
+import { SurveyGuard } from 'src/guards/survey.guard';
 import { SurveyPermission } from 'src/enums/surveyPermission';
 import { Logger } from 'src/logger';
 
@@ -63,7 +63,7 @@ export class CollaboratorController {
   @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_COOPERATION_MANAGE])
   async getSurveyCollaboratorList(@Query() query, @Request() req) {
     const { error, value } = Joi.object({
-      surveyId: Joi.string(),
+      surveyId: Joi.string().required(),
     }).validate(query);
     if (error) {
       this.logger.error(error.message, { req });
