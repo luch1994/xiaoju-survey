@@ -18,6 +18,7 @@ export default {
     state.schema.baseConf = _merge({}, state.schema.baseConf, codeData.baseConf)
     state.schema.submitConf = _merge({}, state.schema.submitConf, codeData.submitConf)
     state.schema.questionDataList = codeData.questionDataList || []
+    state.schema.logicConf = codeData.logicConf
   },
   setSurveyId(state, data) {
     state.surveyId = data
@@ -60,5 +61,8 @@ export default {
     Object.keys(presets).forEach((key) => {
       _set(state.schema, key, presets[key])
     })
+  },
+  setQuestionDataList(state, data) {
+    state.schema.questionDataList = data
   }
 }
