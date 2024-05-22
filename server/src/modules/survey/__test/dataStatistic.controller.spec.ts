@@ -9,6 +9,7 @@ import { ResponseSchemaService } from '../../surveyResponse/services/responseSch
 
 import { PluginManagerProvider } from 'src/securityPlugin/pluginManager.provider';
 import { XiaojuSurveyPluginManager } from 'src/securityPlugin/pluginManager';
+import { Logger } from 'src/logger';
 
 import { UserService } from 'src/modules/auth/services/user.service';
 import { ResponseSecurityPlugin } from 'src/securityPlugin/responseSecurityPlugin';
@@ -50,6 +51,12 @@ describe('DataStatisticController', () => {
               return {};
             },
           })),
+        },
+        {
+          provide: Logger,
+          useValue: {
+            error: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -104,7 +111,7 @@ describe('DataStatisticController', () => {
         .spyOn(dataStatisticService, 'getDataTable')
         .mockResolvedValueOnce(mockDataTable);
 
-      const result = await controller.data(mockRequest.query);
+      const result = await controller.data(mockRequest.query, {});
 
       expect(result).toEqual({
         code: 200,
@@ -146,7 +153,7 @@ describe('DataStatisticController', () => {
         .spyOn(dataStatisticService, 'getDataTable')
         .mockResolvedValueOnce(mockDataTable);
 
-      const result = await controller.data(mockRequest.query);
+      const result = await controller.data(mockRequest.query, {});
 
       expect(result).toEqual({
         code: 200,

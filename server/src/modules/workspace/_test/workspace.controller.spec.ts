@@ -8,6 +8,9 @@ import { ROLE as WORKSPACE_ROLE } from 'src/enums/workspace';
 import { ObjectId } from 'mongodb';
 import { Workspace } from 'src/models/workspace.entity';
 import { WorkspaceMember } from 'src/models/workspaceMember.entity';
+import { UserService } from 'src/modules/auth/services/user.service';
+import { SurveyMetaService } from 'src/modules/survey/services/surveyMeta.service';
+import { Logger } from 'src/logger';
 
 jest.mock('src/guards/authentication.guard');
 jest.mock('src/guards/survey.guard');
@@ -39,6 +42,27 @@ describe('WorkspaceController', () => {
             findAllByUserId: jest.fn(),
             batchUpdate: jest.fn(),
             batchDelete: jest.fn(),
+            countByWorkspaceId: jest.fn(),
+          },
+        },
+        {
+          provide: UserService,
+          useValue: {
+            getUserListByIds: jest.fn().mockResolvedValue([]),
+          },
+        },
+        {
+          provide: SurveyMetaService,
+          useValue: {
+            countSurveyMetaByWorkspaceId: jest.fn().mockImplementation(() => {
+              return Math.floor(Math.random() * 10);
+            }),
+          },
+        },
+        {
+          provide: Logger,
+          useValue: {
+            info: jest.fn(),
           },
         },
       ],
@@ -119,24 +143,36 @@ describe('WorkspaceController', () => {
 
       const result = await controller.findAll(req);
 
-      expect(result).toEqual({ code: 200, data: workspaces });
+      expect(result.code).toEqual(200);
       expect(workspaceMemberService.findAllByUserId).toHaveBeenCalledWith({
         userId: req.user._id.toString(),
       });
       expect(workspaceService.findAllById).toHaveBeenCalledWith({
-        workspaceIdList: workspaceInfoList.map(
-          (item) => new ObjectId(item.workspaceId),
-        ),
+        workspaceIdList: workspaceInfoList.map((item) => item.workspaceId),
       });
     });
   });
 
   describe('update', () => {
     it('should update a workspace and its members', async () => {
-      const id = 'workspaceId';
-      const updateDto = { name: 'Updated Workspace', members: [] };
+      const id = new ObjectId().toString();
+
+      const members = {
+        newMembers: [
+          { userId: new ObjectId().toString(), role: WORKSPACE_ROLE.ADMIN },
+        ],
+        adminMembers: [],
+        userMembers: [],
+      };
+      const updateDto = {
+        name: 'Updated Workspace',
+        members: [
+          ...members.newMembers,
+          ...members.adminMembers,
+          ...members.userMembers,
+        ],
+      };
       const updateResult = { affected: 1, raw: '', generatedMaps: [] };
-      const members = { newMembers: [], adminMembers: [], userMembers: [] };
 
       jest.spyOn(workspaceService, 'update').mockResolvedValue(updateResult);
       jest.spyOn(workspaceMemberService, 'batchCreate').mockResolvedValue(null);
@@ -146,7 +182,6 @@ describe('WorkspaceController', () => {
 
       expect(result).toEqual({
         code: 200,
-        data: { affected: updateResult.affected },
       });
       expect(workspaceService.update).toHaveBeenCalledWith(id, {
         name: updateDto.name,

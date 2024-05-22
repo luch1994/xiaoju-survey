@@ -4,8 +4,10 @@ import { CollaboratorService } from '../services/collaborator.service';
 import { Logger } from 'src/logger';
 import { HttpException } from 'src/exceptions/httpException';
 import { CreateCollaboratorDto } from '../dto/createCollaborator.dto';
-import * as Joi from 'joi';
 import { Collaborator } from 'src/models/collaborator.entity';
+import { GetSurveyCollaboratorListDto } from '../dto/getSurveyCollaboratorList.dto';
+import { UserService } from 'src/modules/auth/services/user.service';
+import { ObjectId } from 'mongodb';
 
 jest.mock('src/guards/authentication.guard');
 jest.mock('src/guards/survey.guard');
@@ -27,12 +29,23 @@ describe('CollaboratorController', () => {
             getSurveyCollaboratorList: jest.fn(),
             changeUserPermission: jest.fn(),
             deleteCollaborator: jest.fn(),
+            getCollaborator: jest.fn(),
           },
         },
         {
           provide: Logger,
           useValue: {
             error: jest.fn(),
+          },
+        },
+        {
+          provide: UserService,
+          useValue: {
+            getUserById: jest.fn().mockImplementation((id) => {
+              return Promise.resolve({
+                _id: new ObjectId(id),
+              });
+            }),
           },
         },
       ],
@@ -49,17 +62,15 @@ describe('CollaboratorController', () => {
 
   describe('addCollaborator', () => {
     it('should add a collaborator successfully', async () => {
-      const reqBody = {
+      const userId = new ObjectId().toString();
+      const reqBody: CreateCollaboratorDto = {
         surveyId: 'surveyId',
-        userId: 'userId',
-        permissions: ['surveyManage'],
+        userId: new ObjectId().toString(),
+        permissions: [1001],
       };
-      const req = { user: { _id: 'userId' } };
+      const req = { user: { _id: 'userId' }, surveyMeta: { ownerId: userId } };
       const result = { _id: 'collaboratorId' };
 
-      jest
-        .spyOn(CreateCollaboratorDto, 'validate')
-        .mockReturnValue({ error: null, value: reqBody });
       jest
         .spyOn(collaboratorService, 'create')
         .mockResolvedValue(result as unknown as Collaborator);
@@ -75,22 +86,16 @@ describe('CollaboratorController', () => {
     });
 
     it('should throw an exception if validation fails', async () => {
-      const reqBody = {
-        surveyId: 'surveyId',
-        userId: 'userId',
-        permissions: ['surveyManage'],
+      const reqBody: CreateCollaboratorDto = {
+        surveyId: '',
+        userId: '',
+        permissions: [1001],
       };
       const req = { user: { _id: 'userId' } };
-      const error = new Joi.ValidationError('Validation error', [], '');
-
-      jest
-        .spyOn(CreateCollaboratorDto, 'validate')
-        .mockReturnValue({ error, value: null });
 
       await expect(controller.addCollaborator(reqBody, req)).rejects.toThrow(
         HttpException,
       );
-      expect(logger.error).toHaveBeenCalledWith(error.message, { req });
     });
   });
 
@@ -113,7 +118,9 @@ describe('CollaboratorController', () => {
     });
 
     it('should throw an exception if validation fails', async () => {
-      const query = {};
+      const query: GetSurveyCollaboratorListDto = {
+        surveyId: '',
+      };
       const req = { user: { _id: 'userId' } };
 
       await expect(

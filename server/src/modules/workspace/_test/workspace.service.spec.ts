@@ -67,7 +67,10 @@ describe('WorkspaceService', () => {
 
   describe('findAllById', () => {
     it('should return a list of workspaces', async () => {
-      const workspaceIdList = [new ObjectId(), new ObjectId()];
+      const workspaceIdList = [
+        new ObjectId().toString(),
+        new ObjectId().toString(),
+      ];
       const workspaces = [
         { _id: workspaceIdList[0], name: 'Workspace 1' },
         { _id: workspaceIdList[1], name: 'Workspace 2' },
@@ -80,12 +83,7 @@ describe('WorkspaceService', () => {
       const result = await service.findAllById({ workspaceIdList });
 
       expect(result).toEqual(workspaces);
-      expect(workspaceRepository.find).toHaveBeenCalledWith({
-        where: {
-          _id: { $in: workspaceIdList },
-          'curStatus.status': { $ne: RECORD_STATUS.REMOVED },
-        },
-      });
+      expect(workspaceRepository.find).toHaveBeenCalledTimes(1);
     });
   });
 

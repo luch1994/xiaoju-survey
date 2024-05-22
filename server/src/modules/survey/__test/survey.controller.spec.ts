@@ -100,7 +100,7 @@ describe('SurveyController', () => {
         );
 
       const result = await controller.createSurvey(surveyInfo, {
-        user: { username: 'testUser' },
+        user: { username: 'testUser', _id: new ObjectId() },
       });
 
       expect(result).toEqual({
@@ -136,7 +136,7 @@ describe('SurveyController', () => {
         });
 
       const request = {
-        user: { username: 'testUser' },
+        user: { username: 'testUser', _id: new ObjectId() },
         surveyMeta: existsSurveyMeta,
       }; // 模拟请求对象，根据实际情况进行调整
       const result = await controller.createSurvey(params, request);

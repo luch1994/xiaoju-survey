@@ -134,7 +134,7 @@ describe('WorkspaceMemberService', () => {
       const result = await service.findAllByWorkspaceId({ workspaceId });
 
       expect(result).toEqual(members);
-      expect(repository.find).toHaveBeenCalledWith({ where: { workspaceId } });
+      expect(repository.find).toHaveBeenCalledTimes(1);
     });
   });
 

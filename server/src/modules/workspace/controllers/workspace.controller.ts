@@ -8,6 +8,7 @@ import {
   UseGuards,
   Request,
   SetMetadata,
+  HttpCode,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -44,6 +45,7 @@ export class WorkspaceController {
   ) {}
 
   @Get('getRoleList')
+  @HttpCode(200)
   async getRoleList() {
     const rolePermissions = Object.values(WORKSPACE_ROLE_PERMISSION);
     return {
@@ -53,6 +55,7 @@ export class WorkspaceController {
   }
 
   @Post()
+  @HttpCode(200)
   async create(@Body() workspace: CreateWorkspaceDto, @Request() req) {
     const { value, error } = CreateWorkspaceDto.validate(workspace);
     if (error) {
@@ -90,6 +93,7 @@ export class WorkspaceController {
   }
 
   @Get()
+  @HttpCode(200)
   async findAll(@Request() req) {
     const userId = req.user._id.toString();
     // 查询当前用户参与的空间
@@ -143,15 +147,15 @@ export class WorkspaceController {
       data: {
         list: list.map((item) => {
           const workspaceId = item._id.toString();
-          const curWorkspaceInfo = workspaceInfoMap[workspaceId];
-          const ownerInfo = userInfoMap[item.ownerId];
+          const curWorkspaceInfo = workspaceInfoMap?.[workspaceId] || {};
+          const ownerInfo = userInfoMap?.[item.ownerId] || {};
           return {
             ...item,
             owner: ownerInfo.username,
             currentUserId: curWorkspaceInfo.userId,
             currentUserRole: curWorkspaceInfo.role,
-            surveyTotal: surveyTotalMap[workspaceId],
-            memberTotal: memberTotalMap[workspaceId],
+            surveyTotal: surveyTotalMap[workspaceId] || 0,
+            memberTotal: memberTotalMap[workspaceId] || 0,
           };
         }),
       },
@@ -159,6 +163,7 @@ export class WorkspaceController {
   }
 
   @Get(':id')
+  @HttpCode(200)
   @UseGuards(WorkspaceGuard)
   @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.GET_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
@@ -195,6 +200,7 @@ export class WorkspaceController {
   }
 
   @Post(':id')
+  @HttpCode(200)
   @UseGuards(WorkspaceGuard)
   @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.UPDATE_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
@@ -210,7 +216,10 @@ export class WorkspaceController {
     const updateRes = await this.workspaceService.update(id, workspace);
     this.logger.info(`updateRes: ${JSON.stringify(updateRes)}`);
     const { newMembers, adminMembers, userMembers } = splitMembers(members);
-    if (adminMembers.length === 0) {
+    if (
+      adminMembers.length === 0 &&
+      !newMembers.some((item) => item.role === WORKSPACE_ROLE.ADMIN)
+    ) {
       throw new HttpException(
         '参数错误，空间不能没有管理员',
         EXCEPTION_CODE.PARAMETER_ERROR,
@@ -239,6 +248,7 @@ export class WorkspaceController {
   }
 
   @Delete(':id')
+  @HttpCode(200)
   @UseGuards(WorkspaceGuard)
   @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.DELETE_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')

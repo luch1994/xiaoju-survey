@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Post,
   Query,
   Request,
@@ -40,6 +41,7 @@ export class CollaboratorController {
   ) {}
 
   @Get('getPermissionList')
+  @HttpCode(200)
   async getPermissionList() {
     const vals = Object.values(SURVEY_PERMISSION_DESCRIPTION);
     return {
@@ -49,6 +51,7 @@ export class CollaboratorController {
   }
 
   @Post('')
+  @HttpCode(200)
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'body.surveyId')
   @SetMetadata('surveyPermission', [
@@ -70,7 +73,7 @@ export class CollaboratorController {
       throw new HttpException('用户不存在', EXCEPTION_CODE.USER_NOT_EXISTS);
     }
 
-    if (user.username === req.surveyMeta.owner) {
+    if (user._id.toString() === req.surveyMeta.ownerId) {
       throw new HttpException(
         '不能给问卷所有者授权',
         EXCEPTION_CODE.PARAMETER_ERROR,
@@ -100,6 +103,7 @@ export class CollaboratorController {
   }
 
   @Get('')
+  @HttpCode(200)
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'query.surveyId')
   @SetMetadata('surveyPermission', [
@@ -124,6 +128,7 @@ export class CollaboratorController {
   }
 
   @Post('changeUserPermission')
+  @HttpCode(200)
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'body.surveyId')
   @SetMetadata('surveyPermission', [
@@ -152,6 +157,7 @@ export class CollaboratorController {
   }
 
   @Post('deleteCollaborator')
+  @HttpCode(200)
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'body.surveyId')
   @SetMetadata('surveyPermission', [
