@@ -32,7 +32,7 @@ describe('SurveyGuard', () => {
         {
           provide: CollaboratorService,
           useValue: {
-            getUserPermission: jest.fn(),
+            getCollaborator: jest.fn(),
           },
         },
         {
@@ -117,7 +117,7 @@ describe('SurveyGuard', () => {
       .spyOn(surveyMetaService, 'getSurveyById')
       .mockResolvedValue(surveyMeta as SurveyMeta);
     jest
-      .spyOn(collaboratorService, 'getUserPermission')
+      .spyOn(collaboratorService, 'getCollaborator')
       .mockResolvedValue({ permissions: [] } as Collaborator);
 
     await expect(guard.canActivate(context)).rejects.toThrow(

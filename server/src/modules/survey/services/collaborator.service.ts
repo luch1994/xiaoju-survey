@@ -26,7 +26,7 @@ export class CollaboratorService {
     return list;
   }
 
-  async getUserPermission({ userId, surveyId }) {
+  async getCollaborator({ userId, surveyId }) {
     const info = await this.collaboratorRepository.findOne({
       where: {
         surveyId,

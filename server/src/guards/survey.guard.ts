@@ -65,7 +65,7 @@ export class SurveyGuard implements CanActivate {
       throw new AuthenticationException('没有权限');
     }
 
-    const info = await this.collaboratorService.getUserPermission({
+    const info = await this.collaboratorService.getCollaborator({
       surveyId,
       userId: user._id.toString(),
     });

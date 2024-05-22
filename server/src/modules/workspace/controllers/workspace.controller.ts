@@ -9,7 +9,6 @@ import {
   Request,
   SetMetadata,
 } from '@nestjs/common';
-import { ObjectId } from 'mongodb';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 import { Authentication } from 'src/guards/authentication.guard';
@@ -27,6 +26,9 @@ import {
   ROLE_PERMISSION as WORKSPACE_ROLE_PERMISSION,
 } from 'src/enums/workspace';
 import { splitMembers } from '../utils/splitMember';
+import { UserService } from 'src/modules/auth/services/user.service';
+import { SurveyMetaService } from 'src/modules/survey/services/surveyMeta.service';
+import { Logger } from 'src/logger';
 
 @ApiTags('workspace')
 @ApiBearerAuth()
@@ -36,6 +38,9 @@ export class WorkspaceController {
   constructor(
     private readonly workspaceService: WorkspaceService,
     private readonly workspaceMemberService: WorkspaceMemberService,
+    private readonly userService: UserService,
+    private readonly surveyMetaService: SurveyMetaService,
+    private readonly logger: Logger,
   ) {}
 
   @Get('getRoleList')
@@ -91,14 +96,65 @@ export class WorkspaceController {
     const workspaceInfoList = await this.workspaceMemberService.findAllByUserId(
       { userId },
     );
-    const workspaceIdList = workspaceInfoList.map(
-      (item) => new ObjectId(item.workspaceId),
-    );
+    const workspaceIdList = workspaceInfoList.map((item) => item.workspaceId);
+    const workspaceInfoMap = workspaceInfoList.reduce((pre, cur) => {
+      pre[cur.workspaceId] = cur;
+      return pre;
+    }, {});
     // 查询当前用户的空间列表
     const list = await this.workspaceService.findAllById({ workspaceIdList });
+    const ownerIdList = list.map((item) => item.ownerId);
+    const userList = await this.userService.getUserListByIds({
+      idList: ownerIdList,
+    });
+    const userInfoMap = userList.reduce((pre, cur) => {
+      const id = cur._id.toString();
+      pre[id] = cur;
+      return pre;
+    }, {});
+    const surveyTotalList = await Promise.all(
+      workspaceIdList.map((item) => {
+        return this.surveyMetaService.countSurveyMetaByWorkspaceId({
+          workspaceId: item,
+        });
+      }),
+    );
+    const surveyTotalMap = workspaceIdList.reduce((pre, cur, index) => {
+      const total = surveyTotalList[index];
+      pre[cur] = total;
+      return pre;
+    }, {});
+
+    const memberTotalList = await Promise.all(
+      workspaceIdList.map((item) => {
+        return this.workspaceMemberService.countByWorkspaceId({
+          workspaceId: item,
+        });
+      }),
+    );
+    const memberTotalMap = workspaceIdList.reduce((pre, cur, index) => {
+      const total = memberTotalList[index];
+      pre[cur] = total;
+      return pre;
+    }, {});
+
     return {
       code: 200,
-      data: list,
+      data: {
+        list: list.map((item) => {
+          const workspaceId = item._id.toString();
+          const curWorkspaceInfo = workspaceInfoMap[workspaceId];
+          const ownerInfo = userInfoMap[item.ownerId];
+          return {
+            ...item,
+            owner: ownerInfo.username,
+            currentUserId: curWorkspaceInfo.userId,
+            currentUserRole: curWorkspaceInfo.role,
+            surveyTotal: surveyTotalMap[workspaceId],
+            memberTotal: memberTotalMap[workspaceId],
+          };
+        }),
+      },
     };
   }
 
@@ -111,13 +167,29 @@ export class WorkspaceController {
     const members = await this.workspaceMemberService.findAllByWorkspaceId({
       workspaceId,
     });
+    const userIdList = members.map((item) => item.userId);
+    const userList = await this.userService.getUserListByIds({
+      idList: userIdList,
+    });
+    const userInfoMap = userList.reduce((pre, cur) => {
+      const id = cur._id.toString();
+      pre[id] = cur;
+      return pre;
+    }, {});
     return {
       code: 200,
       data: {
         _id: workspaceInfo._id,
         name: workspaceInfo.name,
         description: workspaceInfo.description,
-        members,
+        members: members.map((item) => {
+          return {
+            _id: item._id,
+            userId: item.userId,
+            role: item.role,
+            username: userInfoMap[item.userId].username,
+          };
+        }),
       },
     };
   }
@@ -128,9 +200,22 @@ export class WorkspaceController {
   @SetMetadata('workspaceId', 'params.id')
   async update(@Param('id') id: string, @Body() workspace: CreateWorkspaceDto) {
     const members = workspace.members;
+    if (!Array.isArray(members) || members.length === 0) {
+      throw new HttpException(
+        '参数错误，成员不能为空',
+        EXCEPTION_CODE.PARAMETER_ERROR,
+      );
+    }
     delete workspace.members;
     const updateRes = await this.workspaceService.update(id, workspace);
+    this.logger.info(`updateRes: ${JSON.stringify(updateRes)}`);
     const { newMembers, adminMembers, userMembers } = splitMembers(members);
+    if (adminMembers.length === 0) {
+      throw new HttpException(
+        '参数错误，空间不能没有管理员',
+        EXCEPTION_CODE.PARAMETER_ERROR,
+      );
+    }
     const allIds = [...adminMembers, ...userMembers];
     // 新增和更新成员,把数据库里已删除的成员删掉
     await Promise.all([
@@ -150,9 +235,6 @@ export class WorkspaceController {
     ]);
     return {
       code: 200,
-      data: {
-        affected: updateRes.affected,
-      },
     };
   }
 
@@ -161,7 +243,8 @@ export class WorkspaceController {
   @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.DELETE_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
   async delete(@Param('id') id: string) {
-    await this.workspaceService.delete(id);
+    const res = await this.workspaceService.delete(id);
+    this.logger.info(`res: ${JSON.stringify(res)}`);
     return {
       code: 200,
     };

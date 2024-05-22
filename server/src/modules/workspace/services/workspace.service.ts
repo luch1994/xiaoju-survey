@@ -39,17 +39,18 @@ export class WorkspaceService {
   async findAllById({
     workspaceIdList,
   }: {
-    workspaceIdList: ObjectId[];
+    workspaceIdList: string[];
   }): Promise<Workspace[]> {
     return this.workspaceRepository.find({
       where: {
         _id: {
-          $in: workspaceIdList,
+          $in: workspaceIdList.map((item) => new ObjectId(item)),
         },
         'curStatus.status': {
           $ne: RECORD_STATUS.REMOVED,
         },
       },
+      select: ['_id', 'curStatus', 'name', 'description', 'ownerId'],
     });
   }
 
@@ -57,12 +58,12 @@ export class WorkspaceService {
     return await this.workspaceRepository.update(id, workspace);
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string) {
     const newStatus = {
       status: RECORD_STATUS.REMOVED,
       date: Date.now(),
     };
-    await this.workspaceRepository.updateOne(
+    const workspaceRes = await this.workspaceRepository.updateOne(
       {
         _id: new ObjectId(id),
       },
@@ -75,7 +76,7 @@ export class WorkspaceService {
         },
       },
     );
-    await this.surveyMetaRepository.updateMany(
+    const surveyRes = await this.surveyMetaRepository.updateMany(
       {
         workspaceId: id,
       },
@@ -88,5 +89,9 @@ export class WorkspaceService {
         },
       },
     );
+    return {
+      workspaceRes,
+      surveyRes,
+    };
   }
 }

@@ -15,7 +15,7 @@ export class CreateWorkspaceDto {
   static validate(data) {
     return Joi.object({
       name: Joi.string().required(),
-      description: Joi.string().allow(null),
+      description: Joi.string().allow(null, ''),
       members: Joi.array()
         .allow(null)
         .items(

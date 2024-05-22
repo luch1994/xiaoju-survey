@@ -43,11 +43,19 @@ export class SurveyMetaService {
     remark: string;
     surveyType: string;
     username: string;
+    userId: string;
     createMethod: string;
     createFrom: string;
   }) {
-    const { title, remark, surveyType, username, createMethod, createFrom } =
-      params;
+    const {
+      title,
+      remark,
+      surveyType,
+      username,
+      createMethod,
+      createFrom,
+      userId,
+    } = params;
     const surveyPath = await this.getNewSurveyPath();
     const newSurvey = this.surveyRepository.create({
       title,
@@ -56,6 +64,7 @@ export class SurveyMetaService {
       surveyPath,
       creator: username,
       owner: username,
+      ownerId: userId,
       createMethod,
       createFrom,
     });
@@ -101,18 +110,18 @@ export class SurveyMetaService {
   async getSurveyMetaList(condition: {
     pageNum: number;
     pageSize: number;
-    username: string;
+    userId: string;
     filter: Record<string, any>;
     order: Record<string, any>;
     workspaceId?: string;
   }): Promise<{ data: any[]; count: number }> {
-    const { pageNum, pageSize, username, workspaceId } = condition;
+    const { pageNum, pageSize, userId, workspaceId } = condition;
     const skip = (pageNum - 1) * pageSize;
     try {
       const query: Record<string, any> = Object.assign(
         {},
         {
-          owner: username,
+          ownerId: userId,
           'curStatus.status': {
             $ne: 'removed',
           },
@@ -155,5 +164,15 @@ export class SurveyMetaService {
       surveyMeta.statusList = [curStatus];
     }
     return this.surveyRepository.save(surveyMeta);
+  }
+
+  async countSurveyMetaByWorkspaceId({ workspaceId }) {
+    const total = await this.surveyRepository.count({
+      workspaceId,
+      'curStatus.status': {
+        $ne: RECORD_STATUS.REMOVED,
+      },
+    });
+    return total;
   }
 }

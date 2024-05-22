@@ -80,7 +80,7 @@ describe('CollaboratorService', () => {
     });
   });
 
-  describe('getUserPermission', () => {
+  describe('getCollaborator', () => {
     it('should return user permission for a survey', async () => {
       const surveyId = 'surveyId';
       const userId = 'userId';
@@ -93,7 +93,7 @@ describe('CollaboratorService', () => {
 
       jest.spyOn(repository, 'findOne').mockResolvedValue(collaborator as any);
 
-      const result = await service.getUserPermission({ userId, surveyId });
+      const result = await service.getCollaborator({ userId, surveyId });
 
       expect(result).toEqual(collaborator);
       expect(repository.findOne).toHaveBeenCalledWith({

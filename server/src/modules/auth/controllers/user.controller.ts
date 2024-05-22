@@ -1,6 +1,6 @@
 import { Controller, Get, Query, HttpCode, UseGuards } from '@nestjs/common';
 
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Authentication } from 'src/guards/authentication.guard';
 
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
@@ -10,6 +10,7 @@ import { UserService } from '../services/user.service';
 import { GetUserListDto } from '../dto/getUserList.dto';
 
 @ApiTags('user')
+@ApiBearerAuth()
 @Controller('/api/user')
 export class UserController {
   constructor(private readonly userService: UserService) {}

@@ -78,7 +78,6 @@ export class SurveyController {
 
     const { title, remark, createMethod, createFrom } = value;
 
-    const username = req.user.username;
     let surveyType = '';
     if (createMethod === 'copy') {
       const survey = req.surveyMeta;
@@ -91,7 +90,8 @@ export class SurveyController {
       title,
       remark,
       surveyType,
-      username,
+      username: req.user.username,
+      userId: req.user._id.toString(),
       createMethod,
       createFrom,
     });

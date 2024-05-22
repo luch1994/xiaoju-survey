@@ -22,9 +22,11 @@ import {
 import { Logger } from 'src/logger';
 
 import { CollaboratorService } from '../services/collaborator.service';
+import { UserService } from 'src/modules/auth/services/user.service';
 
 import { CreateCollaboratorDto } from '../dto/createCollaborator.dto';
 import { ChangeUserPermissionDto } from '../dto/changeUserPermission.dto';
+import { GetSurveyCollaboratorListDto } from '../dto/getSurveyCollaboratorList.dto';
 
 @UseGuards(Authentication)
 @ApiTags('collaborator')
@@ -34,6 +36,7 @@ export class CollaboratorController {
   constructor(
     private readonly collaboratorService: CollaboratorService,
     private readonly logger: Logger,
+    private readonly userService: UserService,
   ) {}
 
   @Get('getPermissionList')
@@ -61,6 +64,31 @@ export class CollaboratorController {
       throw new HttpException('参数有误', EXCEPTION_CODE.PARAMETER_ERROR);
     }
 
+    // 检查用户是否存在
+    const user = await this.userService.getUserById(value.userId);
+    if (!user) {
+      throw new HttpException('用户不存在', EXCEPTION_CODE.USER_NOT_EXISTS);
+    }
+
+    if (user.username === req.surveyMeta.owner) {
+      throw new HttpException(
+        '不能给问卷所有者授权',
+        EXCEPTION_CODE.PARAMETER_ERROR,
+      );
+    }
+
+    const collaborator = await this.collaboratorService.getCollaborator({
+      userId: value.userId,
+      surveyId: value.surveyId,
+    });
+
+    if (collaborator) {
+      throw new HttpException(
+        '用户已经是协作者',
+        EXCEPTION_CODE.PARAMETER_ERROR,
+      );
+    }
+
     const res = await this.collaboratorService.create(value);
 
     return {
@@ -77,10 +105,11 @@ export class CollaboratorController {
   @SetMetadata('surveyPermission', [
     SURVEY_PERMISSION.SURVEY_COOPERATION_MANAGE,
   ])
-  async getSurveyCollaboratorList(@Query() query, @Request() req) {
-    const { error, value } = Joi.object({
-      surveyId: Joi.string().required(),
-    }).validate(query);
+  async getSurveyCollaboratorList(
+    @Query() query: GetSurveyCollaboratorListDto,
+    @Request() req,
+  ) {
+    const { error, value } = GetSurveyCollaboratorListDto.validate(query);
     if (error) {
       this.logger.error(error.message, { req });
       throw new HttpException('参数有误', EXCEPTION_CODE.PARAMETER_ERROR);

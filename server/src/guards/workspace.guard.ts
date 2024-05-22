@@ -64,7 +64,7 @@ export class WorkspaceGuard implements CanActivate {
       ) {
         return true;
       }
-      throw new AuthenticationException('没有空间权限');
+      throw new AuthenticationException('没有权限');
     }
 
     return true;

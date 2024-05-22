@@ -9,8 +9,8 @@ export class CreateCollaboratorDto {
   @ApiProperty({ description: '用户id', required: false })
   userId: string;
 
-  @ApiProperty({ description: '权限', required: true })
-  permissions: Array<string>;
+  @ApiProperty({ description: '权限', required: true, enum: SURVEY_PERMISSION })
+  permissions: Array<number>;
 
   static validate(data) {
     return Joi.object({
