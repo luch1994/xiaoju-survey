@@ -4,12 +4,13 @@ export enum WorkspaceRole {
 }
 
 export enum WorkspacePermission {
+  GET_WORKSPACE = 'getWorkspace',
   UPDATE_WORKSPACE = 'updateWorkspace',
   DELETE_WORKSPACE = 'deleteWorkspace',
   ADD_MEMBERS = 'addMembers',
   UPDATE_MEMBER_ROLE = 'updateMemberRole',
   DELETE_MEMBER = 'deleteMember',
-  MANAGE_WORKSPACE_SURVEY = 'manageWorkspaceSurvey',
+  MANAGE_SURVEY = 'manageSurvey',
 }
 
 export const WorkspaceRolePermissionsMap: Record<
@@ -22,7 +23,7 @@ export const WorkspaceRolePermissionsMap: Record<
     WorkspacePermission.ADD_MEMBERS,
     WorkspacePermission.UPDATE_MEMBER_ROLE,
     WorkspacePermission.DELETE_MEMBER,
-    WorkspacePermission.MANAGE_WORKSPACE_SURVEY,
+    WorkspacePermission.MANAGE_SURVEY,
   ],
-  [WorkspaceRole.USER]: [WorkspacePermission.MANAGE_WORKSPACE_SURVEY],
+  [WorkspaceRole.USER]: [WorkspacePermission.MANAGE_SURVEY],
 };

@@ -5,6 +5,7 @@ import { get } from 'lodash';
 import { AuthenticationException } from '../exceptions/authException';
 
 import { WorkspaceMemberService } from 'src/modules/workspace/services/workspaceMember.service';
+import { WorkspaceRolePermissionsMap } from 'src/enums/workspaceRolePermission';
 
 @Injectable()
 export class WorkspaceGuard implements CanActivate {
@@ -14,13 +15,13 @@ export class WorkspaceGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const roles = this.reflector.get<string[]>(
-      'workspaceRoles',
+    const allowPermissions = this.reflector.get<string[]>(
+      'workspacePermissions',
       context.getHandler(),
     );
 
-    if (!roles) {
-      return true; // 没有定义角色，允许访问
+    if (!allowPermissions) {
+      return true; // 没有定义权限，可以访问
     }
 
     const request = context.switchToHttp().getRequest();
@@ -54,9 +55,17 @@ export class WorkspaceGuard implements CanActivate {
       if (!membersInfo) {
         throw new AuthenticationException('没有空间权限');
       }
-      if (!roles.includes(membersInfo.role)) {
-        throw new AuthenticationException('没有空间权限');
+
+      const userPermissions =
+        WorkspaceRolePermissionsMap[membersInfo.role] || [];
+      if (
+        allowPermissions.some((permission) =>
+          userPermissions.includes(permission),
+        )
+      ) {
+        return true;
       }
+      throw new AuthenticationException('没有空间权限');
     }
 
     return true;

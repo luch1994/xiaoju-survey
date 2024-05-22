@@ -26,7 +26,7 @@ import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
 @ApiBearerAuth()
 @UseGuards(WorkspaceGuard)
 @UseGuards(Authentication)
-@Controller('workspaceMember')
+@Controller('/api/workspaceMember')
 export class WorkspaceMemberController {
   constructor(
     private readonly workspaceMemberService: WorkspaceMemberService,

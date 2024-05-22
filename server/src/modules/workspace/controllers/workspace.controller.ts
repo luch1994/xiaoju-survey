@@ -21,13 +21,16 @@ import { WorkspaceMemberService } from '../services/workspaceMember.service';
 import { CreateWorkspaceDto } from '../dto/createWorkspace.dto';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
-import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
+import {
+  WorkspaceRole,
+  WorkspacePermission,
+} from 'src/enums/workspaceRolePermission';
 import { splitMembers } from '../utils/splitMember';
 
 @ApiTags('workspace')
 @ApiBearerAuth()
 @UseGuards(Authentication)
-@Controller('workspace')
+@Controller('/api/workspace')
 export class WorkspaceController {
   constructor(
     private readonly workspaceService: WorkspaceService,
@@ -91,7 +94,7 @@ export class WorkspaceController {
 
   @Get(':id')
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN, WorkspaceRole.USER])
+  @SetMetadata('workspacePermissions', [WorkspacePermission.GET_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
   async getWorkspaceInfo(@Param('id') workspaceId: string) {
     const workspaceInfo = await this.workspaceService.findOneById(workspaceId);
@@ -111,7 +114,7 @@ export class WorkspaceController {
 
   @Post(':id')
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN])
+  @SetMetadata('workspacePermissions', [WorkspacePermission.UPDATE_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
   async update(@Param('id') id: string, @Body() workspace: CreateWorkspaceDto) {
     const members = workspace.members;
@@ -145,7 +148,7 @@ export class WorkspaceController {
 
   @Delete(':id')
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN])
+  @SetMetadata('workspacePermissions', [WorkspacePermission.DELETE_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
   async delete(@Param('id') id: string) {
     await this.workspaceService.delete(id);
