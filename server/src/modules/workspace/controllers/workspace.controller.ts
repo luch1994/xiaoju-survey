@@ -22,9 +22,10 @@ import { CreateWorkspaceDto } from '../dto/createWorkspace.dto';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
 import {
-  WorkspaceRole,
-  WorkspacePermission,
-} from 'src/enums/workspaceRolePermission';
+  ROLE as WORKSPACE_ROLE,
+  PERMISSION as WORKSPACE_PERMISSION,
+  ROLE_PERMISSION as WORKSPACE_ROLE_PERMISSION,
+} from 'src/enums/workspace';
 import { splitMembers } from '../utils/splitMember';
 
 @ApiTags('workspace')
@@ -36,6 +37,15 @@ export class WorkspaceController {
     private readonly workspaceService: WorkspaceService,
     private readonly workspaceMemberService: WorkspaceMemberService,
   ) {}
+
+  @Get('getRoleList')
+  async getRoleList() {
+    const rolePermissions = Object.values(WORKSPACE_ROLE_PERMISSION);
+    return {
+      code: 200,
+      data: rolePermissions,
+    };
+  }
 
   @Post()
   async create(@Body() workspace: CreateWorkspaceDto, @Request() req) {
@@ -58,7 +68,7 @@ export class WorkspaceController {
     await this.workspaceMemberService.create({
       userId,
       workspaceId,
-      role: WorkspaceRole.ADMIN,
+      role: WORKSPACE_ROLE.ADMIN,
     });
     if (Array.isArray(value.members) && value.members.length > 0) {
       await this.workspaceMemberService.batchCreate({
@@ -94,7 +104,7 @@ export class WorkspaceController {
 
   @Get(':id')
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspacePermissions', [WorkspacePermission.GET_WORKSPACE])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.GET_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
   async getWorkspaceInfo(@Param('id') workspaceId: string) {
     const workspaceInfo = await this.workspaceService.findOneById(workspaceId);
@@ -114,7 +124,7 @@ export class WorkspaceController {
 
   @Post(':id')
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspacePermissions', [WorkspacePermission.UPDATE_WORKSPACE])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.UPDATE_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
   async update(@Param('id') id: string, @Body() workspace: CreateWorkspaceDto) {
     const members = workspace.members;
@@ -131,11 +141,11 @@ export class WorkspaceController {
       }),
       this.workspaceMemberService.batchUpdate({
         idList: adminMembers,
-        role: WorkspaceRole.ADMIN,
+        role: WORKSPACE_ROLE.ADMIN,
       }),
       this.workspaceMemberService.batchUpdate({
         idList: userMembers,
-        role: WorkspaceRole.USER,
+        role: WORKSPACE_ROLE.USER,
       }),
     ]);
     return {
@@ -148,7 +158,7 @@ export class WorkspaceController {
 
   @Delete(':id')
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspacePermissions', [WorkspacePermission.DELETE_WORKSPACE])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.DELETE_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
   async delete(@Param('id') id: string) {
     await this.workspaceService.delete(id);

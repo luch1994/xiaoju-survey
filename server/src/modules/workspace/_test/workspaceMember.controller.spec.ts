@@ -6,7 +6,7 @@ import { UpdateWorkspaceMemberDto } from '../dto/updateWorkspaceMember.dto';
 import { DeleteWorkspaceMemberDto } from '../dto/deleteWorkspaceMember.dto';
 import { HttpException } from 'src/exceptions/httpException';
 import { WorkspaceMember } from 'src/models/workspaceMember.entity';
-import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
+import { ROLE as WORKSPACE_ROLE } from 'src/enums/workspace';
 
 jest.mock('src/guards/authentication.guard');
 jest.mock('src/guards/survey.guard');
@@ -45,7 +45,7 @@ describe('WorkspaceMemberController', () => {
       const createDto: CreateWorkspaceMemberDto = {
         workspaceId: 'workspaceId',
         userId: 'userId',
-        role: WorkspaceRole.ADMIN,
+        role: WORKSPACE_ROLE.ADMIN,
       };
       const createdMember = { _id: 'memberId' };
 
@@ -111,7 +111,7 @@ describe('WorkspaceMemberController', () => {
       const updateDto: UpdateWorkspaceMemberDto = {
         workspaceId: 'workspaceId',
         userId: 'userId',
-        role: WorkspaceRole.ADMIN,
+        role: WORKSPACE_ROLE.ADMIN,
       };
       const updateResult = { modifiedCount: 1 };
 

@@ -5,30 +5,33 @@ import {
   HttpCode,
   UseGuards,
   SetMetadata,
+  Request,
 } from '@nestjs/common';
 import * as Joi from 'joi';
 import { ApiTags } from '@nestjs/swagger';
 
 import { SurveyHistoryService } from '../services/surveyHistory.service';
-import { SurveyMetaService } from '../services/surveyMeta.service';
 
 import { Authentication } from 'src/guards/authentication.guard';
 import { SurveyGuard } from 'src/guards/survey.guard';
-import { SurveyPermission } from 'src/enums/surveyPermission';
+import { SURVEY_PERMISSION } from 'src/enums/surveyPermission';
+import { Logger } from 'src/logger';
+import { HttpException } from 'src/exceptions/httpException';
+import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
 
 @ApiTags('survey')
 @Controller('/api/surveyHisotry')
 export class SurveyHistoryController {
   constructor(
     private readonly surveyHistoryService: SurveyHistoryService,
-    private readonly surveyMetaService: SurveyMetaService,
+    private readonly logger: Logger,
   ) {}
 
   @Get('/getList')
   @HttpCode(200)
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'query.surveyId')
-  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_CONF_MANAGE])
+  @SetMetadata('surveyPermission', [SURVEY_PERMISSION.SURVEY_CONF_MANAGE])
   @UseGuards(Authentication)
   async getList(
     @Query()
@@ -36,14 +39,20 @@ export class SurveyHistoryController {
       surveyId: string;
       historyType: string;
     },
+    @Request() req,
   ) {
-    const validationResult = await Joi.object({
+    const { value, error } = Joi.object({
       surveyId: Joi.string().required(),
       historyType: Joi.string().required(),
-    }).validateAsync(queryInfo);
+    }).validate(queryInfo);
 
-    const surveyId = validationResult.surveyId;
-    const historyType = validationResult.historyType;
+    if (error) {
+      this.logger.error(error.message, { req });
+      throw new HttpException('参数有误', EXCEPTION_CODE.PARAMETER_ERROR);
+    }
+
+    const surveyId = value.surveyId;
+    const historyType = value.historyType;
     const data = await this.surveyHistoryService.getHistoryList({
       surveyId,
       historyType,

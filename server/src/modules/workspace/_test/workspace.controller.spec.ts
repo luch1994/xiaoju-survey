@@ -4,7 +4,7 @@ import { WorkspaceService } from '../services/workspace.service';
 import { WorkspaceMemberService } from '../services/workspaceMember.service';
 import { CreateWorkspaceDto } from '../dto/createWorkspace.dto';
 import { HttpException } from 'src/exceptions/httpException';
-import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
+import { ROLE as WORKSPACE_ROLE } from 'src/enums/workspace';
 import { ObjectId } from 'mongodb';
 import { Workspace } from 'src/models/workspace.entity';
 import { WorkspaceMember } from 'src/models/workspaceMember.entity';
@@ -38,6 +38,7 @@ describe('WorkspaceController', () => {
             batchCreate: jest.fn(),
             findAllByUserId: jest.fn(),
             batchUpdate: jest.fn(),
+            batchDelete: jest.fn(),
           },
         },
       ],
@@ -55,7 +56,7 @@ describe('WorkspaceController', () => {
       const createWorkspaceDto: CreateWorkspaceDto = {
         name: 'Test Workspace',
         description: 'Test Description',
-        members: [{ userId: 'userId1', role: WorkspaceRole.USER }],
+        members: [{ userId: 'userId1', role: WORKSPACE_ROLE.USER }],
       };
       const req = { user: { _id: new ObjectId() } };
       const createdWorkspace = { _id: new ObjectId() };
@@ -80,7 +81,7 @@ describe('WorkspaceController', () => {
       expect(workspaceMemberService.create).toHaveBeenCalledWith({
         userId: req.user._id.toString(),
         workspaceId: createdWorkspace._id.toString(),
-        role: WorkspaceRole.ADMIN,
+        role: WORKSPACE_ROLE.ADMIN,
       });
       expect(workspaceMemberService.batchCreate).toHaveBeenCalledWith({
         workspaceId: createdWorkspace._id.toString(),
@@ -156,11 +157,11 @@ describe('WorkspaceController', () => {
       });
       expect(workspaceMemberService.batchUpdate).toHaveBeenCalledWith({
         idList: members.adminMembers,
-        role: WorkspaceRole.ADMIN,
+        role: WORKSPACE_ROLE.ADMIN,
       });
       expect(workspaceMemberService.batchUpdate).toHaveBeenCalledWith({
         idList: members.userMembers,
-        role: WorkspaceRole.USER,
+        role: WORKSPACE_ROLE.USER,
       });
     });
   });

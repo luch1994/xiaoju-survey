@@ -20,7 +20,7 @@ import { DeleteWorkspaceMemberDto } from '../dto/deleteWorkspaceMember.dto';
 
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
-import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
+import { PERMISSION as WORKSPACE_PERMISSION } from 'src/enums/workspace';
 
 @ApiTags('workspaceMember')
 @ApiBearerAuth()
@@ -33,7 +33,7 @@ export class WorkspaceMemberController {
   ) {}
 
   @Post()
-  @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_MEMBERS])
   @SetMetadata('workspaceId', 'body.workspaceId')
   async create(@Body() member: CreateWorkspaceMemberDto) {
     const { error, value } = CreateWorkspaceMemberDto.validate(member);
@@ -58,7 +58,7 @@ export class WorkspaceMemberController {
   }
 
   @Get()
-  @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN, WorkspaceRole.USER])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_MEMBERS])
   @SetMetadata('workspaceId', 'query.workspaceId')
   async findAll(@Request() req) {
     const workspaceId = req.query.workspaceId;
@@ -75,7 +75,7 @@ export class WorkspaceMemberController {
   }
 
   @Post('updateRole')
-  @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_MEMBERS])
   @SetMetadata('workspaceId', 'body.workspaceId')
   async updateRole(@Body() updateDto: UpdateWorkspaceMemberDto) {
     const { error, value } = UpdateWorkspaceMemberDto.validate(updateDto);
@@ -99,7 +99,7 @@ export class WorkspaceMemberController {
   }
 
   @Post('deleteMember')
-  @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_MEMBERS])
   @SetMetadata('workspaceId', 'body.id')
   async delete(@Body() deleteDto: DeleteWorkspaceMemberDto) {
     const { value, error } = DeleteWorkspaceMemberDto.validate(deleteDto);

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import Joi from 'joi';
-import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
+import { ROLE as WORKSPACE_ROLE } from 'src/enums/workspace';
 
 export class CreateWorkspaceDto {
   @ApiProperty({ description: '空间名称', required: true })
@@ -10,7 +10,7 @@ export class CreateWorkspaceDto {
   description?: string;
 
   @ApiProperty({ description: '空间成员', required: true })
-  members: Array<{ userId: string; role: WorkspaceRole; _id?: string }>;
+  members: Array<{ userId: string; role: WORKSPACE_ROLE; _id?: string }>;
 
   static validate(data) {
     return Joi.object({
@@ -21,9 +21,9 @@ export class CreateWorkspaceDto {
         .items(
           Joi.object({
             userId: Joi.string().required(),
-            role: Joi.string().valid(WorkspaceRole.ADMIN, WorkspaceRole.USER),
+            role: Joi.string().valid(WORKSPACE_ROLE.ADMIN, WORKSPACE_ROLE.USER),
           }),
         ),
-    }).validate(data);
+    }).validate(data, { allowUnknown: true });
   }
 }

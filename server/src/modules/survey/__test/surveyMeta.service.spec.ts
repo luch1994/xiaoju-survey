@@ -177,6 +177,7 @@ describe('SurveyMetaService', () => {
         where: {
           owner: 'testUser',
           'curStatus.status': { $ne: 'removed' },
+          workspaceId: null,
         },
         skip: 0,
         take: 10,

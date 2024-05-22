@@ -104,11 +104,12 @@ export class SurveyMetaService {
     username: string;
     filter: Record<string, any>;
     order: Record<string, any>;
+    workspaceId?: string;
   }): Promise<{ data: any[]; count: number }> {
-    const { pageNum, pageSize, username } = condition;
+    const { pageNum, pageSize, username, workspaceId } = condition;
     const skip = (pageNum - 1) * pageSize;
     try {
-      const query = Object.assign(
+      const query: Record<string, any> = Object.assign(
         {},
         {
           owner: username,
@@ -118,6 +119,11 @@ export class SurveyMetaService {
         },
         condition.filter,
       );
+      if (workspaceId) {
+        query.workspaceId = workspaceId;
+      } else {
+        query.workspaceId = null;
+      }
       const order =
         condition.order && Object.keys(condition.order).length > 0
           ? (condition.order as FindOptionsOrder<SurveyMeta>)

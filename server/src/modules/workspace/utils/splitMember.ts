@@ -1,4 +1,4 @@
-import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
+import { ROLE as WORKSPACE_ROLE } from 'src/enums/workspace';
 export type Member = {
   userId: string;
   role: string;
@@ -12,7 +12,7 @@ export const splitMembers = (members: Array<Member>) => {
   for (const member of members) {
     if (!member._id) {
       newMembers.push(member);
-    } else if (member.role === WorkspaceRole.ADMIN) {
+    } else if (member.role === WORKSPACE_ROLE.ADMIN) {
       adminMembers.push(member._id);
     } else {
       userMembers.push(member._id);

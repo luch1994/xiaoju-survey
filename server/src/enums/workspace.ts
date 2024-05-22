@@ -1,0 +1,33 @@
+export enum ROLE {
+  ADMIN = 'admin',
+  USER = 'user',
+}
+
+export const ROLE_DESCRIPTION = {
+  ADMIN: {
+    name: '管理员',
+    value: ROLE.ADMIN,
+  },
+  USER: {
+    name: '用户',
+    value: ROLE.USER,
+  },
+};
+
+export enum PERMISSION {
+  GET_WORKSPACE = 2001,
+  UPDATE_WORKSPACE = 2002,
+  DELETE_WORKSPACE = 2003,
+  MANAGE_MEMBERS = 2004,
+  MANAGE_SURVEY = 2005,
+}
+
+export const ROLE_PERMISSION: Record<ROLE, PERMISSION[]> = {
+  [ROLE.ADMIN]: [
+    PERMISSION.UPDATE_WORKSPACE,
+    PERMISSION.DELETE_WORKSPACE,
+    PERMISSION.MANAGE_MEMBERS,
+    PERMISSION.MANAGE_SURVEY,
+  ],
+  [ROLE.USER]: [PERMISSION.MANAGE_SURVEY],
+};

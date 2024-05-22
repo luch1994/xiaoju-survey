@@ -5,7 +5,7 @@ import { get } from 'lodash';
 import { AuthenticationException } from '../exceptions/authException';
 
 import { WorkspaceMemberService } from 'src/modules/workspace/services/workspaceMember.service';
-import { WorkspaceRolePermissionsMap } from 'src/enums/workspaceRolePermission';
+import { ROLE_PERMISSION as WORKSPACE_ROLE_PERMISSION } from 'src/enums/workspace';
 
 @Injectable()
 export class WorkspaceGuard implements CanActivate {
@@ -56,8 +56,7 @@ export class WorkspaceGuard implements CanActivate {
         throw new AuthenticationException('没有空间权限');
       }
 
-      const userPermissions =
-        WorkspaceRolePermissionsMap[membersInfo.role] || [];
+      const userPermissions = WORKSPACE_ROLE_PERMISSION[membersInfo.role] || [];
       if (
         allowPermissions.some((permission) =>
           userPermissions.includes(permission),

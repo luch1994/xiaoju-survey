@@ -21,9 +21,11 @@ import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
 import { Authentication } from 'src/guards/authentication.guard';
 import { Logger } from 'src/logger';
 import { SurveyGuard } from 'src/guards/survey.guard';
-import { SurveyPermission } from 'src/enums/surveyPermission';
+import { SURVEY_PERMISSION } from 'src/enums/surveyPermission';
 import { WorkspaceGuard } from 'src/guards/workspace.guard';
-import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
+import { PERMISSION as WORKSPACE_PERMISSION } from 'src/enums/workspace';
+
+import { GetSurveyListDto } from '../dto/getSurveyMetaList.dto';
 
 @ApiTags('survey')
 @Controller('/api/survey')
@@ -37,26 +39,24 @@ export class SurveyMetaController {
   @HttpCode(200)
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'body.surveyId')
-  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_DATA_MANAGE])
+  @SetMetadata('surveyPermission', [SURVEY_PERMISSION.SURVEY_RESPONSE_MANAGE])
   @UseGuards(Authentication)
   async updateMeta(@Body() reqBody, @Request() req) {
-    let validationResult;
-    try {
-      validationResult = await Joi.object({
-        title: Joi.string().required(),
-        remark: Joi.string().allow(null, '').default(''),
-        surveyId: Joi.string().required(),
-      }).validateAsync(reqBody, { allowUnknown: true });
-    } catch (error) {
+    const { value, error } = Joi.object({
+      title: Joi.string().required(),
+      remark: Joi.string().allow(null, '').default(''),
+      surveyId: Joi.string().required(),
+    }).validate(reqBody, { allowUnknown: true });
+
+    if (error) {
       this.logger.error(`updateMeta_parameter error: ${error.message}`, {
         req,
       });
       throw new HttpException('参数错误', EXCEPTION_CODE.PARAMETER_ERROR);
     }
-
     const survey = req.surveyMeta;
-    survey.title = validationResult.title;
-    survey.remark = validationResult.remark;
+    survey.title = value.title;
+    survey.remark = value.remark;
 
     await this.surveyMetaService.editSurveyMeta(survey);
 
@@ -66,43 +66,35 @@ export class SurveyMetaController {
   }
 
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspaceRoles', [WorkspaceRole.ADMIN, WorkspaceRole.USER])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_SURVEY])
   @SetMetadata('workspaceId', { optional: true, key: 'query.workspaceId' })
   @UseGuards(Authentication)
   @Get('/getList')
   @HttpCode(200)
   async getList(
     @Query()
-    queryInfo: {
-      curPage: number;
-      pageSize: number;
-    },
+    queryInfo: GetSurveyListDto,
     @Request()
     req,
   ) {
-    const validationResult = await Joi.object({
-      curPage: Joi.number().required(),
-      pageSize: Joi.number().allow(null).default(10),
-      filter: Joi.string().allow(null),
-      order: Joi.string().allow(null),
-    }).validateAsync(queryInfo);
-    const { curPage, pageSize } = validationResult;
+    const { value, error } = GetSurveyListDto.validate(queryInfo);
+    if (error) {
+      this.logger.error(error.message, { req });
+      throw new HttpException('参数有误', EXCEPTION_CODE.PARAMETER_ERROR);
+    }
+    const { curPage, pageSize, workspaceId } = value;
     let filter = {},
       order = {};
-    if (validationResult.filter) {
+    if (value.filter) {
       try {
-        filter = getFilter(
-          JSON.parse(decodeURIComponent(validationResult.filter)),
-        );
+        filter = getFilter(JSON.parse(decodeURIComponent(value.filter)));
       } catch (error) {
         console.log(error);
       }
     }
-    if (validationResult.order) {
+    if (value.order) {
       try {
-        order = order = getOrder(
-          JSON.parse(decodeURIComponent(validationResult.order)),
-        );
+        order = order = getOrder(JSON.parse(decodeURIComponent(value.order)));
       } catch (error) {
         console.log(error);
       }
@@ -114,6 +106,7 @@ export class SurveyMetaController {
       username,
       filter,
       order,
+      workspaceId,
     });
     return {
       code: 200,

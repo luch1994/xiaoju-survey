@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import Joi from 'joi';
-import { WorkspaceRole } from 'src/enums/workspaceRolePermission';
+import { ROLE as WORKSPACE_ROLE } from 'src/enums/workspace';
 
 export class UpdateWorkspaceMemberDto {
   @ApiProperty({ description: '空间角色', required: true })
@@ -15,7 +15,7 @@ export class UpdateWorkspaceMemberDto {
   static validate(data) {
     return Joi.object({
       role: Joi.string()
-        .valid(WorkspaceRole.ADMIN, WorkspaceRole.USER)
+        .valid(WORKSPACE_ROLE.ADMIN, WORKSPACE_ROLE.USER)
         .required(),
       workspaceId: Joi.string().required(),
       userId: Joi.string().required(),

@@ -15,7 +15,10 @@ import { Authentication } from 'src/guards/authentication.guard';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
 import { SurveyGuard } from 'src/guards/survey.guard';
-import { SurveyPermission } from 'src/enums/surveyPermission';
+import {
+  SURVEY_PERMISSION,
+  SURVEY_PERMISSION_DESCRIPTION,
+} from 'src/enums/surveyPermission';
 import { Logger } from 'src/logger';
 
 import { CollaboratorService } from '../services/collaborator.service';
@@ -33,10 +36,21 @@ export class CollaboratorController {
     private readonly logger: Logger,
   ) {}
 
+  @Get('getPermissionList')
+  async getPermissionList() {
+    const vals = Object.values(SURVEY_PERMISSION_DESCRIPTION);
+    return {
+      code: 200,
+      data: vals,
+    };
+  }
+
   @Post('')
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'body.surveyId')
-  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_COOPERATION_MANAGE])
+  @SetMetadata('surveyPermission', [
+    SURVEY_PERMISSION.SURVEY_COOPERATION_MANAGE,
+  ])
   async addCollaborator(
     @Body() reqBody: CreateCollaboratorDto,
     @Request() req,
@@ -60,7 +74,9 @@ export class CollaboratorController {
   @Get('')
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'query.surveyId')
-  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_COOPERATION_MANAGE])
+  @SetMetadata('surveyPermission', [
+    SURVEY_PERMISSION.SURVEY_COOPERATION_MANAGE,
+  ])
   async getSurveyCollaboratorList(@Query() query, @Request() req) {
     const { error, value } = Joi.object({
       surveyId: Joi.string().required(),
@@ -81,7 +97,9 @@ export class CollaboratorController {
   @Post('changeUserPermission')
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'body.surveyId')
-  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_COOPERATION_MANAGE])
+  @SetMetadata('surveyPermission', [
+    SURVEY_PERMISSION.SURVEY_COOPERATION_MANAGE,
+  ])
   async changeUserPermission(
     @Body() reqBody: ChangeUserPermissionDto,
     @Request() req,
@@ -107,7 +125,9 @@ export class CollaboratorController {
   @Post('deleteCollaborator')
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'body.surveyId')
-  @SetMetadata('surveyPermission', [SurveyPermission.SURVEY_COOPERATION_MANAGE])
+  @SetMetadata('surveyPermission', [
+    SURVEY_PERMISSION.SURVEY_COOPERATION_MANAGE,
+  ])
   async deleteCollaborator(@Query() query, @Request() req) {
     const { error, value } = Joi.object({
       surveyId: Joi.string(),

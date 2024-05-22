@@ -7,6 +7,8 @@ import { WorkspaceMemberService } from 'src/modules/workspace/services/workspace
 import { AuthenticationException } from '../../exceptions/authException';
 import { WorkspaceMember } from 'src/models/workspaceMember.entity';
 
+import { PERMISSION as WORKSPACE_PERMISSION } from 'src/enums/workspace';
+
 describe('WorkspaceGuard', () => {
   let guard: WorkspaceGuard;
   let reflector: Reflector;
@@ -52,7 +54,9 @@ describe('WorkspaceGuard', () => {
 
   it('should throw AuthenticationException if workspaceId is missing and optional is false', async () => {
     const context = createMockExecutionContext();
-    jest.spyOn(reflector, 'get').mockReturnValueOnce(['admin']);
+    jest
+      .spyOn(reflector, 'get')
+      .mockReturnValueOnce([WORKSPACE_PERMISSION.GET_WORKSPACE]);
     jest.spyOn(reflector, 'get').mockReturnValueOnce('params.workspaceId');
 
     await expect(guard.canActivate(context)).rejects.toThrow(
@@ -62,7 +66,9 @@ describe('WorkspaceGuard', () => {
 
   it('should allow access if workspaceId is missing and optional is true', async () => {
     const context = createMockExecutionContext();
-    jest.spyOn(reflector, 'get').mockReturnValueOnce(['admin']);
+    jest
+      .spyOn(reflector, 'get')
+      .mockReturnValueOnce([WORKSPACE_PERMISSION.UPDATE_WORKSPACE]);
     jest
       .spyOn(reflector, 'get')
       .mockReturnValueOnce({ key: 'params.workspaceId', optional: true });
@@ -77,7 +83,9 @@ describe('WorkspaceGuard', () => {
 
   it('should throw AuthenticationException if user is not a member of the workspace', async () => {
     const context = createMockExecutionContext();
-    jest.spyOn(reflector, 'get').mockReturnValueOnce(['admin']);
+    jest
+      .spyOn(reflector, 'get')
+      .mockReturnValueOnce([WORKSPACE_PERMISSION.DELETE_WORKSPACE]);
     jest.spyOn(reflector, 'get').mockReturnValueOnce('params.workspaceId');
     jest.spyOn(workspaceMemberService, 'findOne').mockResolvedValue(null);
 
@@ -88,7 +96,9 @@ describe('WorkspaceGuard', () => {
 
   it('should throw AuthenticationException if user role is not allowed', async () => {
     const context = createMockExecutionContext();
-    jest.spyOn(reflector, 'get').mockReturnValueOnce(['admin']);
+    jest
+      .spyOn(reflector, 'get')
+      .mockReturnValueOnce([WORKSPACE_PERMISSION.MANAGE_MEMBERS]);
     jest.spyOn(reflector, 'get').mockReturnValueOnce('params.workspaceId');
     jest
       .spyOn(workspaceMemberService, 'findOne')
@@ -101,7 +111,9 @@ describe('WorkspaceGuard', () => {
 
   it('should allow access if user role is allowed', async () => {
     const context = createMockExecutionContext();
-    jest.spyOn(reflector, 'get').mockReturnValueOnce(['admin']);
+    jest
+      .spyOn(reflector, 'get')
+      .mockReturnValueOnce([WORKSPACE_PERMISSION.MANAGE_SURVEY]);
     jest.spyOn(reflector, 'get').mockReturnValueOnce('params.workspaceId');
     jest
       .spyOn(workspaceMemberService, 'findOne')
