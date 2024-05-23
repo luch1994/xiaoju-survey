@@ -62,8 +62,14 @@ export class WorkspaceMemberService {
     );
   }
 
-  async batchDelete({ idList }: { idList: Array<string> }) {
-    if (idList.length === 0) {
+  async batchDelete({
+    idList,
+    neIdList,
+  }: {
+    idList: Array<string>;
+    neIdList: Array<string>;
+  }) {
+    if (idList.length === 0 || neIdList.length === 0) {
       return {
         modifiedCount: 0,
       };
@@ -71,6 +77,7 @@ export class WorkspaceMemberService {
     return this.workspaceMemberRepository.deleteMany({
       _id: {
         $in: idList.map((item) => new ObjectId(item)),
+        $nin: neIdList.map((item) => new ObjectId(item)),
       },
     });
   }

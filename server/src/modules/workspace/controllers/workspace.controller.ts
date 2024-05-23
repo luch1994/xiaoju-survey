@@ -11,6 +11,7 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import moment from 'moment';
 
 import { Authentication } from 'src/guards/authentication.guard';
 import { WorkspaceGuard } from 'src/guards/workspace.guard';
@@ -170,6 +171,7 @@ export class WorkspaceController {
           const ownerInfo = userInfoMap?.[item.ownerId] || {};
           return {
             ...item,
+            createDate: moment(item.createDate).format('YYYY-MM-DD HH:mm:ss'),
             owner: ownerInfo.username,
             currentUserId: curWorkspaceInfo.userId,
             currentUserRole: curWorkspaceInfo.role,
@@ -186,11 +188,15 @@ export class WorkspaceController {
   @UseGuards(WorkspaceGuard)
   @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.GET_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
-  async getWorkspaceInfo(@Param('id') workspaceId: string) {
+  async getWorkspaceInfo(@Param('id') workspaceId: string, @Request() req) {
     const workspaceInfo = await this.workspaceService.findOneById(workspaceId);
     const members = await this.workspaceMemberService.findAllByWorkspaceId({
       workspaceId,
     });
+    const memberInfoMap = members.reduce((pre, cur) => {
+      cur[cur.userId] = cur;
+      return pre;
+    }, {});
     const userIdList = members.map((item) => item.userId);
     const userList = await this.userService.getUserListByIds({
       idList: userIdList,
@@ -200,12 +206,15 @@ export class WorkspaceController {
       pre[id] = cur;
       return pre;
     }, {});
+    const currentUserId = req.user._id.toString();
     return {
       code: 200,
       data: {
         _id: workspaceInfo._id,
         name: workspaceInfo.name,
         description: workspaceInfo.description,
+        currentUserId,
+        currentUserRole: memberInfoMap?.[currentUserId]?.role,
         members: members.map((item) => {
           return {
             _id: item._id,
@@ -244,10 +253,31 @@ export class WorkspaceController {
         EXCEPTION_CODE.PARAMETER_ERROR,
       );
     }
+    if (newMembers.length > 0) {
+      const userIdList = newMembers.map((item) => item.userId);
+      const userList = await this.userService.getUserListByIds({
+        idList: userIdList,
+      });
+      const userInfoMap = userList.reduce((pre, cur) => {
+        const id = cur._id.toString();
+        pre[id] = cur;
+        return pre;
+      }, {});
+      for (const member of newMembers) {
+        if (!userInfoMap[member.userId]) {
+          throw new HttpException(
+            `用户id: {${member.userId}} 不存在`,
+            EXCEPTION_CODE.PARAMETER_ERROR,
+          );
+        }
+      }
+    }
+    // 检查新成员是否真实存在
+
     const allIds = [...adminMembers, ...userMembers];
     // 新增和更新成员,把数据库里已删除的成员删掉
-    await Promise.all([
-      this.workspaceMemberService.batchDelete({ idList: allIds }),
+    const res = await Promise.all([
+      this.workspaceMemberService.batchDelete({ idList: [], neIdList: allIds }),
       this.workspaceMemberService.batchCreate({
         workspaceId: id,
         members: newMembers,
@@ -261,6 +291,7 @@ export class WorkspaceController {
         role: WORKSPACE_ROLE.USER,
       }),
     ]);
+    this.logger.info(`updateRes: ${JSON.stringify(res)}`);
     return {
       code: 200,
     };

@@ -50,12 +50,19 @@ export class WorkspaceService {
           $ne: RECORD_STATUS.REMOVED,
         },
       },
-      select: ['_id', 'curStatus', 'name', 'description', 'ownerId'],
+      select: [
+        '_id',
+        'curStatus',
+        'name',
+        'description',
+        'ownerId',
+        'createDate',
+      ],
     });
   }
 
-  async update(id: string, workspace: Partial<Workspace>) {
-    return await this.workspaceRepository.update(id, workspace);
+  update(id: string, workspace: Partial<Workspace>) {
+    return this.workspaceRepository.update(id, workspace);
   }
 
   async delete(id: string) {
