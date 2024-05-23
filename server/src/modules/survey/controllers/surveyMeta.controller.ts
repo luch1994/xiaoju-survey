@@ -99,7 +99,7 @@ export class SurveyMetaController {
         console.log(error);
       }
     }
-    const userId = req.user._id;
+    const userId = req.user._id.toString();
     const data = await this.surveyMetaService.getSurveyMetaList({
       pageNum: curPage,
       pageSize: pageSize,

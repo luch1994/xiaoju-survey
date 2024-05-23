@@ -46,6 +46,7 @@ export class SurveyMetaService {
     userId: string;
     createMethod: string;
     createFrom: string;
+    workspaceId?: string;
   }) {
     const {
       title,
@@ -55,6 +56,7 @@ export class SurveyMetaService {
       createMethod,
       createFrom,
       userId,
+      workspaceId,
     } = params;
     const surveyPath = await this.getNewSurveyPath();
     const newSurvey = this.surveyRepository.create({
@@ -67,6 +69,7 @@ export class SurveyMetaService {
       ownerId: userId,
       createMethod,
       createFrom,
+      workspaceId,
     });
 
     return await this.surveyRepository.save(newSurvey);
@@ -131,7 +134,9 @@ export class SurveyMetaService {
       if (workspaceId) {
         query.workspaceId = workspaceId;
       } else {
-        query.workspaceId = null;
+        query.workspaceId = {
+          $exists: false,
+        };
       }
       const order =
         condition.order && Object.keys(condition.order).length > 0

@@ -94,6 +94,7 @@ export class SurveyController {
       userId: req.user._id.toString(),
       createMethod,
       createFrom,
+      workspaceId: value.workspaceId,
     });
     await this.surveyConfService.createSurveyConf({
       surveyId: surveyMeta._id.toString(),
