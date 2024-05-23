@@ -40,7 +40,11 @@ export class SurveyGuard implements CanActivate {
 
     request.surveyMeta = surveyMeta;
 
-    if (surveyMeta.owner === user.username) {
+    // 兼容老的问卷没有ownerId
+    if (
+      surveyMeta.ownerId === user._id.toString() ||
+      surveyMeta.owner === user.username
+    ) {
       // 问卷的owner，可以访问和操作问卷
       return true;
     }

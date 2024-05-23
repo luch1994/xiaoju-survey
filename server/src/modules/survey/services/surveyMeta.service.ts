@@ -113,18 +113,18 @@ export class SurveyMetaService {
   async getSurveyMetaList(condition: {
     pageNum: number;
     pageSize: number;
+    username: string;
     userId: string;
     filter: Record<string, any>;
     order: Record<string, any>;
     workspaceId?: string;
   }): Promise<{ data: any[]; count: number }> {
-    const { pageNum, pageSize, userId, workspaceId } = condition;
+    const { pageNum, pageSize, userId, username, workspaceId } = condition;
     const skip = (pageNum - 1) * pageSize;
     try {
       const query: Record<string, any> = Object.assign(
         {},
         {
-          ownerId: userId,
           'curStatus.status': {
             $ne: 'removed',
           },
@@ -137,6 +137,15 @@ export class SurveyMetaService {
         query.workspaceId = {
           $exists: false,
         };
+        // 引入空间之前，新建的问卷只有owner字段，引入空间之后，新建的问卷多了ownerId字段，使用owenrId字段进行关联更加合理，此处做了兼容
+        query.$or = [
+          {
+            owner: username,
+          },
+          {
+            ownerId: userId,
+          },
+        ];
       }
       const order =
         condition.order && Object.keys(condition.order).length > 0
