@@ -167,7 +167,8 @@ describe('SurveyMetaService', () => {
       const condition = {
         pageNum: 1,
         pageSize: 10,
-        userId: 'testUser',
+        userId: 'testUserId',
+        username: 'testUser',
         filter: {},
         order: {},
       };

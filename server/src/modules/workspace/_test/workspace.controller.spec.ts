@@ -1,16 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ObjectId } from 'mongodb';
 import { WorkspaceController } from '../controllers/workspace.controller';
 import { WorkspaceService } from '../services/workspace.service';
 import { WorkspaceMemberService } from '../services/workspaceMember.service';
 import { CreateWorkspaceDto } from '../dto/createWorkspace.dto';
 import { HttpException } from 'src/exceptions/httpException';
 import { ROLE as WORKSPACE_ROLE } from 'src/enums/workspace';
-import { ObjectId } from 'mongodb';
 import { Workspace } from 'src/models/workspace.entity';
 import { WorkspaceMember } from 'src/models/workspaceMember.entity';
 import { UserService } from 'src/modules/auth/services/user.service';
 import { SurveyMetaService } from 'src/modules/survey/services/surveyMeta.service';
 import { Logger } from 'src/logger';
+import { User } from 'src/models/user.entity';
 
 jest.mock('src/guards/authentication.guard');
 jest.mock('src/guards/survey.guard');
@@ -20,6 +21,7 @@ describe('WorkspaceController', () => {
   let controller: WorkspaceController;
   let workspaceService: WorkspaceService;
   let workspaceMemberService: WorkspaceMemberService;
+  let userService: UserService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -48,7 +50,7 @@ describe('WorkspaceController', () => {
         {
           provide: UserService,
           useValue: {
-            getUserListByIds: jest.fn().mockResolvedValue([]),
+            getUserListByIds: jest.fn(),
           },
         },
         {
@@ -73,6 +75,7 @@ describe('WorkspaceController', () => {
     workspaceMemberService = module.get<WorkspaceMemberService>(
       WorkspaceMemberService,
     );
+    userService = module.get<UserService>(UserService);
   });
 
   describe('create', () => {
@@ -84,6 +87,12 @@ describe('WorkspaceController', () => {
       };
       const req = { user: { _id: new ObjectId() } };
       const createdWorkspace = { _id: new ObjectId() };
+
+      jest.spyOn(userService, 'getUserListByIds').mockResolvedValue([
+        {
+          _id: 'userId1',
+        },
+      ] as unknown as Array<User>);
 
       jest
         .spyOn(workspaceService, 'create')
@@ -129,17 +138,17 @@ describe('WorkspaceController', () => {
   describe('findAll', () => {
     it('should return a list of workspaces for the user', async () => {
       const req = { user: { _id: new ObjectId() } };
-      const workspaceInfoList = [{ workspaceId: new ObjectId().toString() }];
+      const memberList = [{ workspaceId: new ObjectId().toString() }];
       const workspaces = [{ _id: new ObjectId(), name: 'Test Workspace' }];
 
       jest
         .spyOn(workspaceMemberService, 'findAllByUserId')
-        .mockResolvedValue(
-          workspaceInfoList as unknown as Array<WorkspaceMember>,
-        );
+        .mockResolvedValue(memberList as unknown as Array<WorkspaceMember>);
       jest
         .spyOn(workspaceService, 'findAllById')
         .mockResolvedValue(workspaces as Array<Workspace>);
+
+      jest.spyOn(userService, 'getUserListByIds').mockResolvedValue([]);
 
       const result = await controller.findAll(req);
 
@@ -148,7 +157,7 @@ describe('WorkspaceController', () => {
         userId: req.user._id.toString(),
       });
       expect(workspaceService.findAllById).toHaveBeenCalledWith({
-        workspaceIdList: workspaceInfoList.map((item) => item.workspaceId),
+        workspaceIdList: memberList.map((item) => item.workspaceId),
       });
     });
   });
@@ -156,14 +165,17 @@ describe('WorkspaceController', () => {
   describe('update', () => {
     it('should update a workspace and its members', async () => {
       const id = new ObjectId().toString();
-
+      const userId = new ObjectId();
       const members = {
-        newMembers: [
-          { userId: new ObjectId().toString(), role: WORKSPACE_ROLE.ADMIN },
-        ],
+        newMembers: [{ userId: userId.toString(), role: WORKSPACE_ROLE.ADMIN }],
         adminMembers: [],
         userMembers: [],
       };
+      jest.spyOn(userService, 'getUserListByIds').mockResolvedValue([
+        {
+          _id: userId,
+        },
+      ] as Array<User>);
       const updateDto = {
         name: 'Updated Workspace',
         members: [

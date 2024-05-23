@@ -56,7 +56,7 @@ export class SurveyController {
   @Post('/createSurvey')
   @HttpCode(200)
   @UseGuards(SurveyGuard)
-  @SetMetadata('surveyId', 'body.surveyId')
+  @SetMetadata('surveyId', 'body.createFrom')
   @SetMetadata('surveyPermission', [SURVEY_PERMISSION.SURVEY_CONF_MANAGE])
   @UseGuards(WorkspaceGuard)
   @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_SURVEY])
@@ -78,12 +78,15 @@ export class SurveyController {
 
     const { title, remark, createMethod, createFrom } = value;
 
-    let surveyType = '';
+    let surveyType = '',
+      workspaceId = null;
     if (createMethod === 'copy') {
       const survey = req.surveyMeta;
       surveyType = survey.surveyType;
+      workspaceId = survey.workspaceId;
     } else {
       surveyType = value.surveyType;
+      workspaceId = value.workspaceId;
     }
 
     const surveyMeta = await this.surveyMetaService.createSurveyMeta({
@@ -94,7 +97,7 @@ export class SurveyController {
       userId: req.user._id.toString(),
       createMethod,
       createFrom,
-      workspaceId: value.workspaceId,
+      workspaceId,
     });
     await this.surveyConfService.createSurveyConf({
       surveyId: surveyMeta._id.toString(),
