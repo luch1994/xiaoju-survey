@@ -82,6 +82,14 @@ export class WorkspaceController {
     if (Array.isArray(value.members) && value.members.length > 0) {
       // 校验用户是否真实存在
       const userIdList = value.members.map((item) => item.userId);
+      // 不能有重复的userId
+      const userIdSet = new Set(userIdList);
+      if (userIdList.length !== Array.from(userIdSet).length) {
+        throw new HttpException(
+          '不能重复添加用户',
+          EXCEPTION_CODE.PARAMETER_ERROR,
+        );
+      }
       const userList = await this.userService.getUserListByIds({
         idList: userIdList,
       });
@@ -253,26 +261,32 @@ export class WorkspaceController {
         EXCEPTION_CODE.PARAMETER_ERROR,
       );
     }
-    if (newMembers.length > 0) {
-      const userIdList = newMembers.map((item) => item.userId);
-      const userList = await this.userService.getUserListByIds({
-        idList: userIdList,
-      });
-      const userInfoMap = userList.reduce((pre, cur) => {
-        const id = cur._id.toString();
-        pre[id] = cur;
-        return pre;
-      }, {});
-      for (const member of newMembers) {
-        if (!userInfoMap[member.userId]) {
-          throw new HttpException(
-            `用户id: {${member.userId}} 不存在`,
-            EXCEPTION_CODE.PARAMETER_ERROR,
-          );
-        }
+    const allUserIdList = members.map((item) => item.userId);
+    // 不能有重复的userId
+    const allUserIdSet = new Set(allUserIdList);
+    if (allUserIdList.length !== Array.from(allUserIdSet).length) {
+      throw new HttpException(
+        '不能重复添加用户',
+        EXCEPTION_CODE.PARAMETER_ERROR,
+      );
+    }
+    // 检查所有成员是否真实存在
+    const allUserList = await this.userService.getUserListByIds({
+      idList: allUserIdList,
+    });
+    const allUserInfoMap = allUserList.reduce((pre, cur) => {
+      const id = cur._id.toString();
+      pre[id] = cur;
+      return pre;
+    }, {});
+    for (const member of members) {
+      if (!allUserInfoMap[member.userId]) {
+        throw new HttpException(
+          `用户id: {${member.userId}} 不存在`,
+          EXCEPTION_CODE.PARAMETER_ERROR,
+        );
       }
     }
-    // 检查新成员是否真实存在
 
     const allIds = [...adminMembers, ...userMembers];
     // 新增和更新成员,把数据库里已删除的成员删掉
