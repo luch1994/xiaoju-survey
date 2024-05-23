@@ -53,7 +53,6 @@ export class SurveyController {
     };
   }
 
-  @UseGuards(Authentication)
   @Post('/createSurvey')
   @HttpCode(200)
   @UseGuards(SurveyGuard)
@@ -62,6 +61,7 @@ export class SurveyController {
   @UseGuards(WorkspaceGuard)
   @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_SURVEY])
   @SetMetadata('workspaceId', { key: 'body.workspaceId', optional: true })
+  @UseGuards(Authentication)
   async createSurvey(
     @Body()
     reqBody: CreateSurveyDto,

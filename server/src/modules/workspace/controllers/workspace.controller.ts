@@ -79,6 +79,25 @@ export class WorkspaceController {
       role: WORKSPACE_ROLE.ADMIN,
     });
     if (Array.isArray(value.members) && value.members.length > 0) {
+      // 校验用户是否真实存在
+      const userIdList = value.members.map((item) => item.userId);
+      const userList = await this.userService.getUserListByIds({
+        idList: userIdList,
+      });
+      const userInfoMap = userList.reduce((pre, cur) => {
+        const id = cur._id.toString();
+        pre[id] = cur;
+        return pre;
+      }, {});
+      for (const member of value.members) {
+        if (!userInfoMap[member.userId]) {
+          throw new HttpException(
+            `用户id: {${member.userId}} 不存在`,
+            EXCEPTION_CODE.PARAMETER_ERROR,
+          );
+        }
+      }
+
       await this.workspaceMemberService.batchCreate({
         workspaceId,
         members: value.members,
