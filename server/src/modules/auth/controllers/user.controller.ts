@@ -35,7 +35,12 @@ export class UserController {
 
     return {
       code: 200,
-      data: userList,
+      data: userList.map((item) => {
+        return {
+          userId: item._id.toString(),
+          username: item.username,
+        };
+      }),
     };
   }
 }
