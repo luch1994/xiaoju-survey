@@ -50,6 +50,9 @@ export class WorkspaceService {
           $ne: RECORD_STATUS.REMOVED,
         },
       },
+      order: {
+        _id: -1,
+      },
       select: [
         '_id',
         'curStatus',

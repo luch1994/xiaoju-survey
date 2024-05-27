@@ -8,7 +8,7 @@ import {
   Request,
 } from '@nestjs/common';
 import * as Joi from 'joi';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 import { DataStatisticService } from '../services/dataStatistic.service';
 import { ResponseSchemaService } from '../../surveyResponse/services/responseScheme.service';
@@ -20,8 +20,10 @@ import { SURVEY_PERMISSION } from 'src/enums/surveyPermission';
 import { Logger } from 'src/logger';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
+import { AggregationStatisDto } from '../dto/aggregationStatis.dto';
 
 @ApiTags('survey')
+@ApiBearerAuth()
 @Controller('/api/survey/dataStatistic')
 export class DataStatisticController {
   constructor(
@@ -78,5 +80,36 @@ export class DataStatisticController {
         listBody,
       },
     };
+  }
+
+  @Get('/aggregationStatis')
+  @HttpCode(200)
+  @UseGuards(Authentication)
+  async aggregationStatis(@Query() queryInfo: AggregationStatisDto) {
+    // 聚合统计
+    const { value, error } = AggregationStatisDto.validate(queryInfo);
+    if (error) {
+      throw new HttpException('参数错误', EXCEPTION_CODE.PARAMETER_ERROR);
+    }
+    const responseSchema =
+      await this.responseSchemaService.getResponseSchemaByPageId(
+        value.surveyId,
+      );
+    const allowQuestionType = [
+      'radio',
+      'checkbox',
+      'binary-choice',
+      'radio-star',
+      'radio-star',
+      'vote',
+    ];
+    const fieldList = responseSchema.code.dataConf.dataList
+      .filter((item) => allowQuestionType.includes(item.type))
+      .map((item) => item.field);
+    const res = await this.dataStatisticService.aggregationStatis({
+      surveyId: value.surveyId,
+      fieldList,
+    });
+    return res;
   }
 }

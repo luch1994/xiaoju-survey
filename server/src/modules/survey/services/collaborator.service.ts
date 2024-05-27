@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Collaborator } from 'src/models/collaborator.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MongoRepository } from 'typeorm';
+import { ObjectId } from 'mongodb';
 
 @Injectable()
 export class CollaboratorService {
@@ -19,9 +20,30 @@ export class CollaboratorService {
     return this.collaboratorRepository.save(collaborator);
   }
 
+  async batchCreate({ surveyId, collaboratorList }) {
+    const res = await this.collaboratorRepository.insertMany(
+      collaboratorList.map((item) => {
+        return {
+          ...item,
+          surveyId,
+        };
+      }),
+    );
+    return res;
+  }
+
   async getSurveyCollaboratorList({ surveyId }) {
     const list = await this.collaboratorRepository.find({
       surveyId,
+    });
+    return list;
+  }
+
+  async getCollaboratorListByIds({ idList }) {
+    const list = await this.collaboratorRepository.find({
+      _id: {
+        $in: idList.map((item) => new ObjectId(item)),
+      },
     });
     return list;
   }
@@ -57,5 +79,35 @@ export class CollaboratorService {
       surveyId,
     });
     return delRes;
+  }
+
+  async batchDelete({ idList, neIdList }) {
+    const delRes = await this.collaboratorRepository.deleteMany({
+      _id: {
+        $in: idList.map((item) => new ObjectId(item)),
+        $nin: neIdList.map((item) => new ObjectId(item)),
+      },
+    });
+    return delRes;
+  }
+
+  async batchDeleteBySurveyId(surveyId) {
+    const delRes = await this.collaboratorRepository.deleteMany({
+      surveyId,
+    });
+    return delRes;
+  }
+
+  updateById({ collaboratorId, permissions }) {
+    return this.collaboratorRepository.updateOne(
+      {
+        _id: new ObjectId(collaboratorId),
+      },
+      {
+        $set: {
+          permissions,
+        },
+      },
+    );
   }
 }

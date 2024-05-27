@@ -101,4 +101,43 @@ export class DataStatisticService {
       listBody,
     };
   }
+
+  async aggregationStatis({ surveyId, fieldList }) {
+    const $facet = fieldList.reduce((pre, cur) => {
+      const $match = { $match: { [`data.${cur}`]: { $nin: [[], '', null] } } };
+      const $group = { $group: { _id: `$data.${cur}`, count: { $sum: 1 } } };
+      const $project = {
+        $project: {
+          _id: 0,
+          count: 1,
+          secretKeys: 1,
+          sensitiveKeys: 1,
+          [`data.${cur}`]: '$_id',
+        },
+      };
+      pre[cur] = [$match, $group, $project];
+      pre[`${cur}_count`] = [
+        $match,
+        { $group: { _id: `$data.${cur}`, count: { $sum: 1 } } },
+        { $group: { _id: null, count: { $sum: 1 } } },
+      ];
+      return pre;
+    }, {});
+    const aggregation = this.surveyResponseRepository.aggregate(
+      [
+        {
+          $match: {
+            pageId: surveyId,
+            'curStatus.status': {
+              $ne: 'removed',
+            },
+          },
+        },
+        { $facet },
+      ],
+      { maxTimeMS: 30000, allowDiskUse: true },
+    );
+    const res = await aggregation.next();
+    return res;
+  }
 }

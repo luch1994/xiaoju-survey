@@ -28,6 +28,8 @@ import { UserService } from 'src/modules/auth/services/user.service';
 import { CreateCollaboratorDto } from '../dto/createCollaborator.dto';
 import { ChangeUserPermissionDto } from '../dto/changeUserPermission.dto';
 import { GetSurveyCollaboratorListDto } from '../dto/getSurveyCollaboratorList.dto';
+import { BatchSaveCollaboratorDto } from '../dto/batchSaveCollaborator.dto';
+import { splitCollaborators } from '../utils/splitCollaborator';
 
 @UseGuards(Authentication)
 @ApiTags('collaborator')
@@ -64,7 +66,10 @@ export class CollaboratorController {
     const { error, value } = CreateCollaboratorDto.validate(reqBody);
     if (error) {
       this.logger.error(error.message, { req });
-      throw new HttpException('参数有误', EXCEPTION_CODE.PARAMETER_ERROR);
+      throw new HttpException(
+        '系统错误，请联系管理员',
+        EXCEPTION_CODE.PARAMETER_ERROR,
+      );
     }
 
     // 检查用户是否存在
@@ -102,6 +107,103 @@ export class CollaboratorController {
     };
   }
 
+  @Post('batchSave')
+  @HttpCode(200)
+  @UseGuards(SurveyGuard)
+  @SetMetadata('surveyId', 'body.surveyId')
+  @SetMetadata('surveyPermission', [
+    SURVEY_PERMISSION.SURVEY_COOPERATION_MANAGE,
+  ])
+  async batchSaveCollaborator(
+    @Body() reqBody: BatchSaveCollaboratorDto,
+    @Request() req,
+  ) {
+    const { error, value } = BatchSaveCollaboratorDto.validate(reqBody);
+    if (error) {
+      this.logger.error(error.message, { req });
+      throw new HttpException(
+        '系统错误，请联系管理员',
+        EXCEPTION_CODE.PARAMETER_ERROR,
+      );
+    }
+
+    if (Array.isArray(value.collaborators) && value.collaborators.length > 0) {
+      const collaboratorUserIdList = value.collaborators.map(
+        (item) => item.userId,
+      );
+      for (const collaboratorUserId of collaboratorUserIdList) {
+        if (collaboratorUserId === req.surveyMeta.ownerId) {
+          throw new HttpException(
+            '不能给问卷所有者授权',
+            EXCEPTION_CODE.PARAMETER_ERROR,
+          );
+        }
+      }
+      // 不能有重复的userId
+      const userIdSet = new Set(collaboratorUserIdList);
+      if (collaboratorUserIdList.length !== Array.from(userIdSet).length) {
+        throw new HttpException(
+          '不能重复添加用户',
+          EXCEPTION_CODE.PARAMETER_ERROR,
+        );
+      }
+      const userList = await this.userService.getUserListByIds({
+        idList: collaboratorUserIdList,
+      });
+      const userInfoMap = userList.reduce((pre, cur) => {
+        const id = cur._id.toString();
+        pre[id] = cur;
+        return pre;
+      }, {});
+
+      for (const collaborator of value.collaborators) {
+        if (!userInfoMap[collaborator.userId]) {
+          throw new HttpException(
+            `用户id: {${collaborator.userId}} 不存在`,
+            EXCEPTION_CODE.PARAMETER_ERROR,
+          );
+        }
+      }
+    }
+
+    if (Array.isArray(value.collaborators) && value.collaborators.length > 0) {
+      const { newCollaborator, existsCollaborator } = splitCollaborators(
+        value.collaborators,
+      );
+      const collaboratorIdList = existsCollaborator.map((item) => item._id);
+      const delRes = await this.collaboratorService.batchDelete({
+        idList: [],
+        neIdList: collaboratorIdList,
+      });
+      this.logger.info(JSON.stringify(delRes), { req });
+      const insertRes = await this.collaboratorService.batchCreate({
+        surveyId: value.surveyId,
+        collaboratorList: newCollaborator,
+      });
+      const updateRes = await Promise.all(
+        existsCollaborator.map((item) =>
+          this.collaboratorService.updateById({
+            collaboratorId: item._id,
+            permissions: item.permissions,
+          }),
+        ),
+      );
+      this.logger.info(
+        `${JSON.stringify(insertRes)} ${JSON.stringify(updateRes)}`,
+      );
+    } else {
+      // 删除所有协作者
+      const delRes = await this.collaboratorService.batchDeleteBySurveyId(
+        value.surveyId,
+      );
+      this.logger.info(JSON.stringify(delRes), { req });
+    }
+
+    return {
+      code: 200,
+    };
+  }
+
   @Get('')
   @HttpCode(200)
   @UseGuards(SurveyGuard)
@@ -121,9 +223,24 @@ export class CollaboratorController {
 
     const res = await this.collaboratorService.getSurveyCollaboratorList(value);
 
+    const userIdList = res.map((item) => item.userId);
+    const userList = await this.userService.getUserListByIds({
+      idList: userIdList,
+    });
+    const userInfoMap = userList.reduce((pre, cur) => {
+      const id = cur._id.toString();
+      pre[id] = cur;
+      return pre;
+    }, {});
+
     return {
       code: 200,
-      data: res,
+      data: res.map((item) => {
+        return {
+          ...item,
+          username: userInfoMap[item.userId]?.username || '',
+        };
+      }),
     };
   }
 

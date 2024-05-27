@@ -60,25 +60,13 @@ export class WorkspaceController {
   async create(@Body() workspace: CreateWorkspaceDto, @Request() req) {
     const { value, error } = CreateWorkspaceDto.validate(workspace);
     if (error) {
+      req.logger.error(`CreateWorkspaceDto validate failed: ${error.message}`);
       throw new HttpException(
-        `参数错误: ${error.message}`,
+        `参数错误: 请联系管理员`,
         EXCEPTION_CODE.PARAMETER_ERROR,
       );
     }
-    const userId = req.user._id.toString();
-    // 插入空间表
-    const retWorkspace = await this.workspaceService.create({
-      name: value.name,
-      description: value.description,
-      ownerId: userId,
-    });
-    const workspaceId = retWorkspace._id.toString();
-    // 空间的成员表要新增一条管理员数据
-    await this.workspaceMemberService.create({
-      userId,
-      workspaceId,
-      role: WORKSPACE_ROLE.ADMIN,
-    });
+
     if (Array.isArray(value.members) && value.members.length > 0) {
       // 校验用户是否真实存在
       const userIdList = value.members.map((item) => item.userId);
@@ -106,7 +94,22 @@ export class WorkspaceController {
           );
         }
       }
-
+    }
+    const userId = req.user._id.toString();
+    // 插入空间表
+    const retWorkspace = await this.workspaceService.create({
+      name: value.name,
+      description: value.description,
+      ownerId: userId,
+    });
+    const workspaceId = retWorkspace._id.toString();
+    // 空间的成员表要新增一条管理员数据
+    await this.workspaceMemberService.create({
+      userId,
+      workspaceId,
+      role: WORKSPACE_ROLE.ADMIN,
+    });
+    if (Array.isArray(value.members) && value.members.length > 0) {
       await this.workspaceMemberService.batchCreate({
         workspaceId,
         members: value.members,
@@ -243,10 +246,7 @@ export class WorkspaceController {
   async update(@Param('id') id: string, @Body() workspace: CreateWorkspaceDto) {
     const members = workspace.members;
     if (!Array.isArray(members) || members.length === 0) {
-      throw new HttpException(
-        '参数错误，成员不能为空',
-        EXCEPTION_CODE.PARAMETER_ERROR,
-      );
+      throw new HttpException('成员不能为空', EXCEPTION_CODE.PARAMETER_ERROR);
     }
     delete workspace.members;
     const updateRes = await this.workspaceService.update(id, workspace);
@@ -257,7 +257,7 @@ export class WorkspaceController {
       !newMembers.some((item) => item.role === WORKSPACE_ROLE.ADMIN)
     ) {
       throw new HttpException(
-        '参数错误，空间不能没有管理员',
+        '空间不能没有管理员',
         EXCEPTION_CODE.PARAMETER_ERROR,
       );
     }
