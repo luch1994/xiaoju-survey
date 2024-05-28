@@ -144,8 +144,16 @@ export function handleAggretionData({ dataMap, item }) {
     }
     return {
       ...item,
+      data: {
+        aggregation: item.data.aggregation.map((aggItem) => {
+          return {
+            ...aggItem,
+            text: aggItem.id,
+          };
+        }),
+        summary,
+      },
       title: dataMap[item.field].title,
-      summary,
     };
   } else {
     return {
