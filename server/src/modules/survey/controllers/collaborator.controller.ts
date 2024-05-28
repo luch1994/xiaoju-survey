@@ -175,6 +175,7 @@ export class CollaboratorController {
         (item) => item.userId,
       );
       const delRes = await this.collaboratorService.batchDelete({
+        surveyId: value.surveyId,
         idList: [],
         neIdList: collaboratorIdList,
         userIdList: newCollaboratorUserIdList,

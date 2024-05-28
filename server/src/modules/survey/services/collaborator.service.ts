@@ -81,8 +81,9 @@ export class CollaboratorService {
     return delRes;
   }
 
-  async batchDelete({ idList, neIdList, userIdList }) {
+  async batchDelete({ idList, neIdList, userIdList, surveyId }) {
     const delRes = await this.collaboratorRepository.deleteMany({
+      surveyId,
       $or: [
         {
           _id: {
