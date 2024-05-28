@@ -7,7 +7,7 @@ import { WorkspaceMemberService } from 'src/modules/workspace/services/workspace
 import { CollaboratorService } from 'src/modules/survey/services/collaborator.service';
 import { SurveyMetaService } from 'src/modules/survey/services/surveyMeta.service';
 import { SurveyNotFoundException } from 'src/exceptions/surveyNotFoundException';
-import { AuthenticationException } from 'src/exceptions/authException';
+import { NoPermissionException } from 'src/exceptions/NoPermissionException';
 
 @Injectable()
 export class SurveyGuard implements CanActivate {
@@ -55,7 +55,7 @@ export class SurveyGuard implements CanActivate {
         userId: user._id.toString(),
       });
       if (!memberInfo) {
-        throw new AuthenticationException('没有权限');
+        throw new NoPermissionException('没有权限');
       }
       return true;
     }
@@ -66,7 +66,7 @@ export class SurveyGuard implements CanActivate {
     );
 
     if (!Array.isArray(permissions) || permissions.length === 0) {
-      throw new AuthenticationException('没有权限');
+      throw new NoPermissionException('没有权限');
     }
 
     const info = await this.collaboratorService.getCollaborator({
@@ -75,7 +75,7 @@ export class SurveyGuard implements CanActivate {
     });
 
     if (!info) {
-      throw new AuthenticationException('没有权限');
+      throw new NoPermissionException('没有权限');
     }
     request.collaborator = info;
     if (
@@ -83,6 +83,6 @@ export class SurveyGuard implements CanActivate {
     ) {
       return true;
     }
-    throw new AuthenticationException('没有权限');
+    throw new NoPermissionException('没有权限');
   }
 }

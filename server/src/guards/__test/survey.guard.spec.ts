@@ -7,7 +7,7 @@ import { WorkspaceMemberService } from 'src/modules/workspace/services/workspace
 import { CollaboratorService } from 'src/modules/survey/services/collaborator.service';
 import { SurveyMetaService } from 'src/modules/survey/services/surveyMeta.service';
 import { SurveyNotFoundException } from 'src/exceptions/surveyNotFoundException';
-import { AuthenticationException } from 'src/exceptions/authException';
+import { NoPermissionException } from 'src/exceptions/noPermissionException';
 import { SurveyMeta } from 'src/models/surveyMeta.entity';
 import { WorkspaceMember } from 'src/models/workspaceMember.entity';
 import { Collaborator } from 'src/models/collaborator.entity';
@@ -108,7 +108,7 @@ describe('SurveyGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('should throw AuthenticationException if user has no permissions', async () => {
+  it('should throw NoPermissionException if user has no permissions', async () => {
     const context = createMockExecutionContext();
     const surveyMeta = { owner: 'anotherUser', workspaceId: null };
     jest.spyOn(reflector, 'get').mockReturnValueOnce('params.surveyId');
@@ -121,7 +121,7 @@ describe('SurveyGuard', () => {
       .mockResolvedValue({ permissions: [] } as Collaborator);
 
     await expect(guard.canActivate(context)).rejects.toThrow(
-      AuthenticationException,
+      NoPermissionException,
     );
   });
 

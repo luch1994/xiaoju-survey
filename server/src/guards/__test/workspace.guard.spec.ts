@@ -4,7 +4,7 @@ import { ExecutionContext } from '@nestjs/common';
 
 import { WorkspaceGuard } from '../workspace.guard';
 import { WorkspaceMemberService } from 'src/modules/workspace/services/workspaceMember.service';
-import { AuthenticationException } from '../../exceptions/authException';
+import { NoPermissionException } from '../../exceptions/noPermissionException';
 import { WorkspaceMember } from 'src/models/workspaceMember.entity';
 
 import { PERMISSION as WORKSPACE_PERMISSION } from 'src/enums/workspace';
@@ -52,7 +52,7 @@ describe('WorkspaceGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('should throw AuthenticationException if workspaceId is missing and optional is false', async () => {
+  it('should throw NoPermissionException if workspaceId is missing and optional is false', async () => {
     const context = createMockExecutionContext();
     jest
       .spyOn(reflector, 'get')
@@ -60,7 +60,7 @@ describe('WorkspaceGuard', () => {
     jest.spyOn(reflector, 'get').mockReturnValueOnce('params.workspaceId');
 
     await expect(guard.canActivate(context)).rejects.toThrow(
-      AuthenticationException,
+      NoPermissionException,
     );
   });
 
@@ -81,7 +81,7 @@ describe('WorkspaceGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('should throw AuthenticationException if user is not a member of the workspace', async () => {
+  it('should throw NoPermissionException if user is not a member of the workspace', async () => {
     const context = createMockExecutionContext();
     jest
       .spyOn(reflector, 'get')
@@ -90,11 +90,11 @@ describe('WorkspaceGuard', () => {
     jest.spyOn(workspaceMemberService, 'findOne').mockResolvedValue(null);
 
     await expect(guard.canActivate(context)).rejects.toThrow(
-      AuthenticationException,
+      NoPermissionException,
     );
   });
 
-  it('should throw AuthenticationException if user role is not allowed', async () => {
+  it('should throw NoPermissionException if user role is not allowed', async () => {
     const context = createMockExecutionContext();
     jest
       .spyOn(reflector, 'get')
@@ -105,7 +105,7 @@ describe('WorkspaceGuard', () => {
       .mockResolvedValue({ role: 'member' } as WorkspaceMember);
 
     await expect(guard.canActivate(context)).rejects.toThrow(
-      AuthenticationException,
+      NoPermissionException,
     );
   });
 

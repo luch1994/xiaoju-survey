@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { get } from 'lodash';
 
-import { AuthenticationException } from '../exceptions/authException';
+import { NoPermissionException } from '../exceptions/noPermissionException';
 
 import { WorkspaceMemberService } from 'src/modules/workspace/services/workspaceMember.service';
 import { ROLE_PERMISSION as WORKSPACE_ROLE_PERMISSION } from 'src/enums/workspace';
@@ -43,7 +43,7 @@ export class WorkspaceGuard implements CanActivate {
     const workspaceId = get(request, workspaceIdKey);
 
     if (!workspaceId && optional === false) {
-      throw new AuthenticationException('没有空间权限');
+      throw new NoPermissionException('没有空间权限');
     }
 
     if (workspaceId) {
@@ -53,7 +53,7 @@ export class WorkspaceGuard implements CanActivate {
       });
 
       if (!membersInfo) {
-        throw new AuthenticationException('没有空间权限');
+        throw new NoPermissionException('没有空间权限');
       }
 
       const userPermissions = WORKSPACE_ROLE_PERMISSION[membersInfo.role] || [];
@@ -64,7 +64,7 @@ export class WorkspaceGuard implements CanActivate {
       ) {
         return true;
       }
-      throw new AuthenticationException('没有权限');
+      throw new NoPermissionException('没有权限');
     }
 
     return true;
