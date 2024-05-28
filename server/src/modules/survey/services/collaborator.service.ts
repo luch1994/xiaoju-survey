@@ -3,12 +3,14 @@ import { Collaborator } from 'src/models/collaborator.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
+import { Logger } from 'src/logger';
 
 @Injectable()
 export class CollaboratorService {
   constructor(
     @InjectRepository(Collaborator)
     private readonly collaboratorRepository: MongoRepository<Collaborator>,
+    private readonly logger: Logger,
   ) {}
 
   async create({ surveyId, userId, permissions }) {
@@ -81,23 +83,47 @@ export class CollaboratorService {
     return delRes;
   }
 
-  async batchDelete({ idList, neIdList, userIdList, surveyId }) {
-    const delRes = await this.collaboratorRepository.deleteMany({
+  async batchDelete({
+    idList,
+    neIdList,
+    userIdList,
+    surveyId,
+  }: {
+    idList?: Array<string>;
+    neIdList?: Array<string>;
+    userIdList?: Array<string>;
+    surveyId: string;
+  }) {
+    const query: Record<string, any> = {
       surveyId,
-      $or: [
-        {
-          _id: {
-            $in: idList.map((item) => new ObjectId(item)),
-            $nin: neIdList.map((item) => new ObjectId(item)),
-          },
+      $or: [],
+    };
+
+    if (Array.isArray(userIdList) && userIdList.length > 0) {
+      query.$or.push({
+        userId: {
+          $in: userIdList,
         },
-        {
-          userId: {
-            $in: userIdList,
-          },
-        },
-      ],
-    });
+      });
+    }
+
+    if (
+      (Array.isArray(idList) && idList.length > 0) ||
+      (Array.isArray(neIdList) && neIdList.length > 0)
+    ) {
+      const idQuery: Record<string, any> = {
+        _id: {},
+      };
+      if (idList.length > 0) {
+        idQuery._id.$in = idList.map((item) => new ObjectId(item));
+      }
+      if (neIdList.length > 0) {
+        idQuery._id.$nin = neIdList.map((item) => new ObjectId(item));
+      }
+      query.$or.push(idQuery);
+    }
+    this.logger.info(JSON.stringify(query));
+    const delRes = await this.collaboratorRepository.deleteMany(query);
     return delRes;
   }
 
