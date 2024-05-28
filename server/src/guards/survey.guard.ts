@@ -7,7 +7,7 @@ import { WorkspaceMemberService } from 'src/modules/workspace/services/workspace
 import { CollaboratorService } from 'src/modules/survey/services/collaborator.service';
 import { SurveyMetaService } from 'src/modules/survey/services/surveyMeta.service';
 import { SurveyNotFoundException } from 'src/exceptions/surveyNotFoundException';
-import { NoPermissionException } from 'src/exceptions/NoPermissionException';
+import { NoPermissionException } from 'src/exceptions/noPermissionException';
 
 @Injectable()
 export class SurveyGuard implements CanActivate {
