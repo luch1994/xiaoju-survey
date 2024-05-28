@@ -21,6 +21,7 @@ import { Logger } from 'src/logger';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
 import { AggregationStatisDto } from '../dto/aggregationStatis.dto';
+import { handleAggretionData } from '../utils';
 
 @ApiTags('survey')
 @ApiBearerAuth()
@@ -100,16 +101,25 @@ export class DataStatisticController {
       'checkbox',
       'binary-choice',
       'radio-star',
-      'radio-star',
+      'radio-nps',
       'vote',
     ];
     const fieldList = responseSchema.code.dataConf.dataList
       .filter((item) => allowQuestionType.includes(item.type))
       .map((item) => item.field);
+    const dataMap = responseSchema.code.dataConf.dataList.reduce((pre, cur) => {
+      pre[cur.field] = cur;
+      return pre;
+    }, {});
     const res = await this.dataStatisticService.aggregationStatis({
       surveyId: value.surveyId,
       fieldList,
     });
-    return res;
+    return {
+      code: 200,
+      data: res.map((item) => {
+        return handleAggretionData({ item, dataMap });
+      }),
+    };
   }
 }

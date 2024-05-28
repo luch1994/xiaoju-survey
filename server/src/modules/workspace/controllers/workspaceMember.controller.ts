@@ -33,7 +33,7 @@ export class WorkspaceMemberController {
   ) {}
 
   @Post()
-  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_MEMBERS])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.WRITE_MEMBER])
   @SetMetadata('workspaceId', 'body.workspaceId')
   async create(@Body() member: CreateWorkspaceMemberDto) {
     const { error, value } = CreateWorkspaceMemberDto.validate(member);
@@ -58,7 +58,7 @@ export class WorkspaceMemberController {
   }
 
   @Get()
-  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_MEMBERS])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.READ_MEMBER])
   @SetMetadata('workspaceId', 'query.workspaceId')
   async findAll(@Request() req) {
     const workspaceId = req.query.workspaceId;
@@ -75,7 +75,7 @@ export class WorkspaceMemberController {
   }
 
   @Post('updateRole')
-  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_MEMBERS])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.WRITE_MEMBER])
   @SetMetadata('workspaceId', 'body.workspaceId')
   async updateRole(@Body() updateDto: UpdateWorkspaceMemberDto) {
     const { error, value } = UpdateWorkspaceMemberDto.validate(updateDto);
@@ -99,7 +99,7 @@ export class WorkspaceMemberController {
   }
 
   @Post('deleteMember')
-  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_MEMBERS])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.WRITE_MEMBER])
   @SetMetadata('workspaceId', 'body.id')
   async delete(@Body() deleteDto: DeleteWorkspaceMemberDto) {
     const { value, error } = DeleteWorkspaceMemberDto.validate(deleteDto);

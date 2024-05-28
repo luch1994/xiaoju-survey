@@ -7,7 +7,7 @@ import moment from 'moment';
 import { keyBy } from 'lodash';
 import { DataItem } from 'src/interfaces/survey';
 import { ResponseSchema } from 'src/models/responseSchema.entity';
-import { getListHeadByDataList } from '../utils';
+import { getListHeadByDataList, transformAndMergeArrayFields } from '../utils';
 @Injectable()
 export class DataStatisticService {
   private radioType = ['radio-star', 'radio-nps'];
@@ -116,11 +116,6 @@ export class DataStatisticService {
         },
       };
       pre[cur] = [$match, $group, $project];
-      pre[`${cur}_count`] = [
-        $match,
-        { $group: { _id: `$data.${cur}`, count: { $sum: 1 } } },
-        { $group: { _id: null, count: { $sum: 1 } } },
-      ];
       return pre;
     }, {});
     const aggregation = this.surveyResponseRepository.aggregate(
@@ -138,6 +133,30 @@ export class DataStatisticService {
       { maxTimeMS: 30000, allowDiskUse: true },
     );
     const res = await aggregation.next();
-    return res;
+    const submitionCountMap: Record<string, number> = {};
+    for (const field in res) {
+      let count = 0;
+      if (Array.isArray(res[field])) {
+        for (const optionItem of res[field]) {
+          count += optionItem.count;
+        }
+      }
+      submitionCountMap[field] = count;
+    }
+    const transformedData = transformAndMergeArrayFields(res);
+    return fieldList.map((field) => {
+      return {
+        field,
+        data: {
+          aggregation: transformedData[field].map((optionItem) => {
+            return {
+              id: optionItem.data[field],
+              count: optionItem.count,
+            };
+          }),
+          submitionCount: submitionCountMap[field],
+        },
+      };
+    });
   }
 }

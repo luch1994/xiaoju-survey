@@ -77,7 +77,7 @@ export class SurveyGuard implements CanActivate {
     if (!info) {
       throw new AuthenticationException('没有权限');
     }
-
+    request.collaborator = info;
     if (
       permissions.some((permission) => info.permissions.includes(permission))
     ) {

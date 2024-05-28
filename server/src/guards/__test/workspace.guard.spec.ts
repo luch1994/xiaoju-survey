@@ -56,7 +56,7 @@ describe('WorkspaceGuard', () => {
     const context = createMockExecutionContext();
     jest
       .spyOn(reflector, 'get')
-      .mockReturnValueOnce([WORKSPACE_PERMISSION.GET_WORKSPACE]);
+      .mockReturnValueOnce([WORKSPACE_PERMISSION.READ_WORKSPACE]);
     jest.spyOn(reflector, 'get').mockReturnValueOnce('params.workspaceId');
 
     await expect(guard.canActivate(context)).rejects.toThrow(
@@ -68,7 +68,7 @@ describe('WorkspaceGuard', () => {
     const context = createMockExecutionContext();
     jest
       .spyOn(reflector, 'get')
-      .mockReturnValueOnce([WORKSPACE_PERMISSION.UPDATE_WORKSPACE]);
+      .mockReturnValueOnce([WORKSPACE_PERMISSION.WRITE_WORKSPACE]);
     jest
       .spyOn(reflector, 'get')
       .mockReturnValueOnce({ key: 'params.workspaceId', optional: true });
@@ -85,7 +85,7 @@ describe('WorkspaceGuard', () => {
     const context = createMockExecutionContext();
     jest
       .spyOn(reflector, 'get')
-      .mockReturnValueOnce([WORKSPACE_PERMISSION.DELETE_WORKSPACE]);
+      .mockReturnValueOnce([WORKSPACE_PERMISSION.WRITE_WORKSPACE]);
     jest.spyOn(reflector, 'get').mockReturnValueOnce('params.workspaceId');
     jest.spyOn(workspaceMemberService, 'findOne').mockResolvedValue(null);
 
@@ -98,7 +98,7 @@ describe('WorkspaceGuard', () => {
     const context = createMockExecutionContext();
     jest
       .spyOn(reflector, 'get')
-      .mockReturnValueOnce([WORKSPACE_PERMISSION.MANAGE_MEMBERS]);
+      .mockReturnValueOnce([WORKSPACE_PERMISSION.READ_MEMBER]);
     jest.spyOn(reflector, 'get').mockReturnValueOnce('params.workspaceId');
     jest
       .spyOn(workspaceMemberService, 'findOne')
@@ -113,7 +113,7 @@ describe('WorkspaceGuard', () => {
     const context = createMockExecutionContext();
     jest
       .spyOn(reflector, 'get')
-      .mockReturnValueOnce([WORKSPACE_PERMISSION.MANAGE_SURVEY]);
+      .mockReturnValueOnce([WORKSPACE_PERMISSION.READ_MEMBER]);
     jest.spyOn(reflector, 'get').mockReturnValueOnce('params.workspaceId');
     jest
       .spyOn(workspaceMemberService, 'findOne')

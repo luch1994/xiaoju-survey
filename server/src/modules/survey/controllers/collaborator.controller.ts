@@ -171,9 +171,13 @@ export class CollaboratorController {
         value.collaborators,
       );
       const collaboratorIdList = existsCollaborator.map((item) => item._id);
+      const newCollaboratorUserIdList = newCollaborator.map(
+        (item) => item.userId,
+      );
       const delRes = await this.collaboratorService.batchDelete({
         idList: [],
         neIdList: collaboratorIdList,
+        userIdList: newCollaboratorUserIdList,
       });
       this.logger.info(JSON.stringify(delRes), { req });
       const insertRes = await this.collaboratorService.batchCreate({

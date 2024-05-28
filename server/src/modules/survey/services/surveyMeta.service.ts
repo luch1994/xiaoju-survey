@@ -118,8 +118,10 @@ export class SurveyMetaService {
     filter: Record<string, any>;
     order: Record<string, any>;
     workspaceId?: string;
+    surveyIdList?: Array<string>;
   }): Promise<{ data: any[]; count: number }> {
-    const { pageNum, pageSize, userId, username, workspaceId } = condition;
+    const { pageNum, pageSize, userId, username, workspaceId, surveyIdList } =
+      condition;
     const skip = (pageNum - 1) * pageSize;
     try {
       const query: Record<string, any> = Object.assign(
@@ -146,6 +148,13 @@ export class SurveyMetaService {
             ownerId: userId,
           },
         ];
+        if (Array.isArray(surveyIdList) && surveyIdList.length > 0) {
+          query.$or.push({
+            _id: {
+              $in: surveyIdList.map((item) => new ObjectId(item)),
+            },
+          });
+        }
       }
       const order =
         condition.order && Object.keys(condition.order).length > 0

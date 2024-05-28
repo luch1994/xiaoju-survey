@@ -23,7 +23,7 @@ export class BatchSaveCollaboratorDto {
   @ApiProperty({ description: '问卷id', required: true })
   surveyId: string;
 
-  @ApiProperty({ description: '协作人列表', required: true })
+  @ApiProperty({ description: '协作人列表', required: true, isArray: true })
   collaborators: Array<CollaboratorDto>;
 
   static validate(data) {
@@ -33,6 +33,7 @@ export class BatchSaveCollaboratorDto {
         .allow(null)
         .items(
           Joi.object({
+            _id: Joi.string().allow(null, ''),
             userId: Joi.string().required(),
             permissions: Joi.array()
               .required()

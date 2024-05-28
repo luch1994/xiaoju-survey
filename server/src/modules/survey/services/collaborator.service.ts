@@ -81,12 +81,21 @@ export class CollaboratorService {
     return delRes;
   }
 
-  async batchDelete({ idList, neIdList }) {
+  async batchDelete({ idList, neIdList, userIdList }) {
     const delRes = await this.collaboratorRepository.deleteMany({
-      _id: {
-        $in: idList.map((item) => new ObjectId(item)),
-        $nin: neIdList.map((item) => new ObjectId(item)),
-      },
+      $or: [
+        {
+          _id: {
+            $in: idList.map((item) => new ObjectId(item)),
+            $nin: neIdList.map((item) => new ObjectId(item)),
+          },
+        },
+        {
+          userId: {
+            $in: userIdList,
+          },
+        },
+      ],
     });
     return delRes;
   }
@@ -109,5 +118,13 @@ export class CollaboratorService {
         },
       },
     );
+  }
+
+  getCollaboratorListByUserId({ userId }) {
+    return this.collaboratorRepository.find({
+      where: {
+        userId,
+      },
+    });
   }
 }

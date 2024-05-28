@@ -59,7 +59,7 @@ export class SurveyController {
   @SetMetadata('surveyId', 'body.createFrom')
   @SetMetadata('surveyPermission', [SURVEY_PERMISSION.SURVEY_CONF_MANAGE])
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_SURVEY])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.READ_SURVEY])
   @SetMetadata('workspaceId', { key: 'body.workspaceId', optional: true })
   @UseGuards(Authentication)
   async createSurvey(
@@ -201,6 +201,14 @@ export class SurveyController {
     const surveyMeta = req.surveyMeta;
     const surveyConf =
       await this.surveyConfService.getSurveyConfBySurveyId(surveyId);
+
+    surveyMeta.currentUserId = req.user._id.toString();
+    if (req.collaborator) {
+      surveyMeta.isCollaborated = true;
+      surveyMeta.currentPermission = req.collaborator.permissions;
+    } else {
+      surveyMeta.isCollaborated = false;
+    }
 
     return {
       code: 200,

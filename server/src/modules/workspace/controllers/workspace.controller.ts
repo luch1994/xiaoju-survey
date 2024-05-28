@@ -197,7 +197,7 @@ export class WorkspaceController {
   @Get(':id')
   @HttpCode(200)
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.GET_WORKSPACE])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.READ_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
   async getWorkspaceInfo(@Param('id') workspaceId: string, @Request() req) {
     const workspaceInfo = await this.workspaceService.findOneById(workspaceId);
@@ -241,7 +241,7 @@ export class WorkspaceController {
   @Post(':id')
   @HttpCode(200)
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.UPDATE_WORKSPACE])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.WRITE_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
   async update(@Param('id') id: string, @Body() workspace: CreateWorkspaceDto) {
     const members = workspace.members;
@@ -314,7 +314,7 @@ export class WorkspaceController {
   @Delete(':id')
   @HttpCode(200)
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.DELETE_WORKSPACE])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.WRITE_WORKSPACE])
   @SetMetadata('workspaceId', 'params.id')
   async delete(@Param('id') id: string) {
     const res = await this.workspaceService.delete(id);

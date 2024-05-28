@@ -26,6 +26,7 @@ import { WorkspaceGuard } from 'src/guards/workspace.guard';
 import { PERMISSION as WORKSPACE_PERMISSION } from 'src/enums/workspace';
 
 import { GetSurveyListDto } from '../dto/getSurveyMetaList.dto';
+import { CollaboratorService } from '../services/collaborator.service';
 
 @ApiTags('survey')
 @Controller('/api/survey')
@@ -33,6 +34,7 @@ export class SurveyMetaController {
   constructor(
     private readonly surveyMetaService: SurveyMetaService,
     private readonly logger: Logger,
+    private readonly collaboratorService: CollaboratorService,
   ) {}
 
   @Post('/updateMeta')
@@ -66,7 +68,7 @@ export class SurveyMetaController {
   }
 
   @UseGuards(WorkspaceGuard)
-  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.MANAGE_SURVEY])
+  @SetMetadata('workspacePermissions', [WORKSPACE_PERMISSION.READ_SURVEY])
   @SetMetadata('workspaceId', { optional: true, key: 'query.workspaceId' })
   @UseGuards(Authentication)
   @Get('/getList')
@@ -100,6 +102,13 @@ export class SurveyMetaController {
       }
     }
     const userId = req.user._id.toString();
+    const cooperationList =
+      await this.collaboratorService.getCollaboratorListByUserId({ userId });
+    const cooperSurveyIdMap = cooperationList.reduce((pre, cur) => {
+      pre[cur.surveyId] = cur;
+      return pre;
+    }, {});
+    const surveyIdList = cooperationList.map((item) => item.surveyId);
     const username = req.user.username;
     const data = await this.surveyMetaService.getSurveyMetaList({
       pageNum: curPage,
@@ -109,6 +118,7 @@ export class SurveyMetaController {
       filter,
       order,
       workspaceId,
+      surveyIdList,
     });
     return {
       code: 200,
@@ -122,6 +132,15 @@ export class SurveyMetaController {
           item.createDate = moment(item.createDate).format(fmt);
           item.updateDate = moment(item.updateDate).format(fmt);
           item.curStatus.date = moment(item.curStatus.date).format(fmt);
+          const surveyId = item._id.toString();
+          if (cooperSurveyIdMap[surveyId]) {
+            item.isCollaborated = true;
+            item.currentPermissions = cooperSurveyIdMap[surveyId].permissions;
+          } else {
+            item.isCollaborated = false;
+            item.currentPermissions = [];
+          }
+          item.currentUserId = userId;
           return item;
         }),
       },
