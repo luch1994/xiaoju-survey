@@ -178,7 +178,11 @@ export class SurveyController {
   @HttpCode(200)
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'query.surveyId')
-  @SetMetadata('surveyPermission', [SURVEY_PERMISSION.SURVEY_CONF_MANAGE])
+  @SetMetadata('surveyPermission', [
+    SURVEY_PERMISSION.SURVEY_CONF_MANAGE,
+    SURVEY_PERMISSION.SURVEY_COOPERATION_MANAGE,
+    SURVEY_PERMISSION.SURVEY_RESPONSE_MANAGE,
+  ])
   @UseGuards(Authentication)
   async getSurvey(
     @Query()

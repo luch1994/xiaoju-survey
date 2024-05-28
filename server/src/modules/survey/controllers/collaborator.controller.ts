@@ -179,22 +179,25 @@ export class CollaboratorController {
         neIdList: collaboratorIdList,
         userIdList: newCollaboratorUserIdList,
       });
-      this.logger.info(JSON.stringify(delRes), { req });
-      const insertRes = await this.collaboratorService.batchCreate({
-        surveyId: value.surveyId,
-        collaboratorList: newCollaborator,
-      });
-      const updateRes = await Promise.all(
-        existsCollaborator.map((item) =>
-          this.collaboratorService.updateById({
-            collaboratorId: item._id,
-            permissions: item.permissions,
-          }),
-        ),
-      );
-      this.logger.info(
-        `${JSON.stringify(insertRes)} ${JSON.stringify(updateRes)}`,
-      );
+      this.logger.info('batchDelete:' + JSON.stringify(delRes), { req });
+      if (Array.isArray(newCollaborator) && newCollaborator.length > 0) {
+        const insertRes = await this.collaboratorService.batchCreate({
+          surveyId: value.surveyId,
+          collaboratorList: newCollaborator,
+        });
+        this.logger.info(`${JSON.stringify(insertRes)}`);
+      }
+      if (Array.isArray(existsCollaborator) && existsCollaborator.length > 0) {
+        const updateRes = await Promise.all(
+          existsCollaborator.map((item) =>
+            this.collaboratorService.updateById({
+              collaboratorId: item._id,
+              permissions: item.permissions,
+            }),
+          ),
+        );
+        this.logger.info(`${JSON.stringify(updateRes)}`);
+      }
     } else {
       // 删除所有协作者
       const delRes = await this.collaboratorService.batchDeleteBySurveyId(
