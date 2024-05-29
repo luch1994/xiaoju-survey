@@ -105,20 +105,22 @@ export function transformAndMergeArrayFields(data) {
 
 export function handleAggretionData({ dataMap, item }) {
   const type = dataMap[item.field].type;
+  const aggregationMap = item.data.aggregation.reduce((pre, cur) => {
+    pre[cur.id] = cur;
+    return pre;
+  }, {});
   if (['radio', 'checkbox', 'vote', 'binary-choice'].includes(type)) {
-    const optionTextMap = dataMap[item.field].options.reduce((pre, cur) => {
-      pre[cur.hash] = cur.text;
-      return pre;
-    }, {});
     return {
       ...item,
       title: dataMap[item.field].title,
+      type: dataMap[item.field].type,
       data: {
         ...item.data,
-        aggregation: item.data.aggregation.map((aggItem) => {
+        aggregation: dataMap[item.field].options.map((optionItem) => {
           return {
-            ...aggItem,
-            text: optionTextMap[aggItem.id],
+            id: optionItem.hash,
+            text: optionItem.text,
+            count: aggregationMap[optionItem.hash].count || 0,
           };
         }),
       },
@@ -128,12 +130,7 @@ export function handleAggretionData({ dataMap, item }) {
     const average = getAverage({ aggregation: item.data.aggregation });
     const median = getMedian({ aggregation: item.data.aggregation });
     const variance = getVariance({
-      aggregation: item.data.aggregation.map((item) => {
-        return {
-          ...item,
-          text: item.id,
-        };
-      }),
+      aggregation: item.data.aggregation,
       average,
     });
     summary['average'] = average;
@@ -142,23 +139,32 @@ export function handleAggretionData({ dataMap, item }) {
     if (type === 'radio-nps') {
       summary['nps'] = getNps({ aggregation: item.data.aggregation });
     }
+    const range = type === 'radio-nps' ? [0, 10] : [1, 5];
+    const arr = [];
+    for (let i = range[0]; i <= range[1]; i++) {
+      arr.push(i);
+    }
     return {
       ...item,
+      title: dataMap[item.field].title,
+      type: dataMap[item.field].type,
       data: {
-        aggregation: item.data.aggregation.map((aggItem) => {
+        aggregation: arr.map((item) => {
+          const num = item.toString();
           return {
-            ...aggItem,
-            text: aggItem.id,
+            text: num,
+            id: num,
+            count: aggregationMap?.[num]?.count || 0,
           };
         }),
         summary,
       },
-      title: dataMap[item.field].title,
     };
   } else {
     return {
       ...item,
       title: dataMap[item.field].title,
+      type: dataMap[item.field].type,
     };
   }
 }

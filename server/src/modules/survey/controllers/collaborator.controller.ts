@@ -30,6 +30,7 @@ import { ChangeUserPermissionDto } from '../dto/changeUserPermission.dto';
 import { GetSurveyCollaboratorListDto } from '../dto/getSurveyCollaboratorList.dto';
 import { BatchSaveCollaboratorDto } from '../dto/batchSaveCollaborator.dto';
 import { splitCollaborators } from '../utils/splitCollaborator';
+import { SurveyMetaService } from '../services/surveyMeta.service';
 
 @UseGuards(Authentication)
 @ApiTags('collaborator')
@@ -40,6 +41,7 @@ export class CollaboratorController {
     private readonly collaboratorService: CollaboratorService,
     private readonly logger: Logger,
     private readonly userService: UserService,
+    private readonly surveyMetaService: SurveyMetaService,
   ) {}
 
   @Get('getPermissionList')
@@ -303,6 +305,40 @@ export class CollaboratorController {
     return {
       code: 200,
       data: res,
+    };
+  }
+
+  @HttpCode(200)
+  @Get('permissions')
+  async getUserSurveyPermissions(@Request() req, @Query() query) {
+    const user = req.user;
+    const userId = user._id.toString();
+    const surveyId = query.surveyId;
+    const surveyMeta = await this.surveyMetaService.getSurveyById({ surveyId });
+    console.log({ surveyMeta: surveyMeta });
+    if (surveyMeta?.ownerId === userId) {
+      return {
+        code: 200,
+        data: {
+          isOwner: true,
+          permissions: [
+            SURVEY_PERMISSION.SURVEY_COOPERATION_MANAGE,
+            SURVEY_PERMISSION.SURVEY_RESPONSE_MANAGE,
+            SURVEY_PERMISSION.SURVEY_CONF_MANAGE,
+          ],
+        },
+      };
+    }
+    const colloborator = await this.collaboratorService.getCollaborator({
+      surveyId,
+      userId,
+    });
+    return {
+      code: 200,
+      data: {
+        isOwner: false,
+        permissions: colloborator?.permissions || [],
+      },
     };
   }
 }
