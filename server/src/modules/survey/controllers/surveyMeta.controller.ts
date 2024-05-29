@@ -41,7 +41,7 @@ export class SurveyMetaController {
   @HttpCode(200)
   @UseGuards(SurveyGuard)
   @SetMetadata('surveyId', 'body.surveyId')
-  @SetMetadata('surveyPermission', [SURVEY_PERMISSION.SURVEY_RESPONSE_MANAGE])
+  @SetMetadata('surveyPermission', [SURVEY_PERMISSION.SURVEY_CONF_MANAGE])
   @UseGuards(Authentication)
   async updateMeta(@Body() reqBody, @Request() req) {
     const { value, error } = Joi.object({
