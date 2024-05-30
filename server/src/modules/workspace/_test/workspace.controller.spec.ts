@@ -65,6 +65,7 @@ describe('WorkspaceController', () => {
           provide: Logger,
           useValue: {
             info: jest.fn(),
+            error: jest.fn(),
           },
         },
       ],

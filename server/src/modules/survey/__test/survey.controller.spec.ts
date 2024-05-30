@@ -236,7 +236,10 @@ describe('SurveyController', () => {
           } as SurveyConf),
         );
 
-      const request = { user: { username: 'testUser' }, surveyMeta };
+      const request = {
+        user: { username: 'testUser', _id: new ObjectId() },
+        surveyMeta,
+      };
       const result = await controller.getSurvey(
         { surveyId: surveyId.toString() },
         request,

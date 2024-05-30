@@ -9,7 +9,7 @@ export class GetUserListDto {
   pageIndex?: number;
 
   @ApiProperty({ description: '每页查询数', required: false, default: 10 })
-  pageSize: string;
+  pageSize: number;
 
   static validate(data) {
     return Joi.object({

@@ -4,6 +4,8 @@ import { SurveyMetaService } from '../services/surveyMeta.service';
 import { LoggerProvider } from 'src/logger/logger.provider';
 import { HttpException } from 'src/exceptions/httpException';
 import { EXCEPTION_CODE } from 'src/enums/exceptionCode';
+import { CollaboratorService } from '../services/collaborator.service';
+import { ObjectId } from 'mongodb';
 
 jest.mock('src/guards/authentication.guard');
 jest.mock('src/guards/survey.guard');
@@ -27,6 +29,12 @@ describe('SurveyMetaController', () => {
           },
         },
         LoggerProvider,
+        {
+          provide: CollaboratorService,
+          useValue: {
+            getCollaboratorListByUserId: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -166,6 +174,7 @@ describe('SurveyMetaController', () => {
     const req = {
       user: {
         username: 'test-user',
+        _id: new ObjectId(),
       },
     };
 

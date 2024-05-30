@@ -8,6 +8,9 @@ import { Collaborator } from 'src/models/collaborator.entity';
 import { GetSurveyCollaboratorListDto } from '../dto/getSurveyCollaboratorList.dto';
 import { UserService } from 'src/modules/auth/services/user.service';
 import { ObjectId } from 'mongodb';
+import { SurveyMetaService } from '../services/surveyMeta.service';
+import { WorkspaceMemberService } from 'src/modules/workspace/services/workspaceMember.service';
+import { SURVEY_PERMISSION } from 'src/enums/surveyPermission';
 
 jest.mock('src/guards/authentication.guard');
 jest.mock('src/guards/survey.guard');
@@ -17,6 +20,7 @@ describe('CollaboratorController', () => {
   let controller: CollaboratorController;
   let collaboratorService: CollaboratorService;
   let logger: Logger;
+  let userService: UserService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -46,6 +50,19 @@ describe('CollaboratorController', () => {
                 _id: new ObjectId(id),
               });
             }),
+            getUserListByIds: jest.fn(),
+          },
+        },
+        {
+          provide: SurveyMetaService,
+          useValue: {
+            getSurveyById: jest.fn(),
+          },
+        },
+        {
+          provide: WorkspaceMemberService,
+          useValue: {
+            findOne: jest.fn().mockResolvedValue(null),
           },
         },
       ],
@@ -54,6 +71,7 @@ describe('CollaboratorController', () => {
     controller = module.get<CollaboratorController>(CollaboratorController);
     collaboratorService = module.get<CollaboratorService>(CollaboratorService);
     logger = module.get<Logger>(Logger);
+    userService = module.get<UserService>(UserService);
   });
 
   it('should be defined', () => {
@@ -66,7 +84,7 @@ describe('CollaboratorController', () => {
       const reqBody: CreateCollaboratorDto = {
         surveyId: 'surveyId',
         userId: new ObjectId().toString(),
-        permissions: [1001],
+        permissions: [SURVEY_PERMISSION.SURVEY_CONF_MANAGE],
       };
       const req = { user: { _id: 'userId' }, surveyMeta: { ownerId: userId } };
       const result = { _id: 'collaboratorId' };
@@ -89,7 +107,7 @@ describe('CollaboratorController', () => {
       const reqBody: CreateCollaboratorDto = {
         surveyId: '',
         userId: '',
-        permissions: [1001],
+        permissions: [SURVEY_PERMISSION.SURVEY_CONF_MANAGE],
       };
       const req = { user: { _id: 'userId' } };
 
@@ -103,11 +121,15 @@ describe('CollaboratorController', () => {
     it('should return collaborator list', async () => {
       const query = { surveyId: 'surveyId' };
       const req = { user: { _id: 'userId' } };
-      const result = [{ _id: 'collaboratorId', userId: 'userId' }];
+      const result = [
+        { _id: 'collaboratorId', userId: 'userId', username: '' },
+      ];
 
       jest
         .spyOn(collaboratorService, 'getSurveyCollaboratorList')
         .mockResolvedValue(result as unknown as Array<Collaborator>);
+
+      jest.spyOn(userService, 'getUserListByIds').mockResolvedValueOnce([]);
 
       const response = await controller.getSurveyCollaboratorList(query, req);
 

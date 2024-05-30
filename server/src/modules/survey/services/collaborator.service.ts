@@ -114,10 +114,10 @@ export class CollaboratorService {
       const idQuery: Record<string, any> = {
         _id: {},
       };
-      if (idList.length > 0) {
+      if (idList && idList.length > 0) {
         idQuery._id.$in = idList.map((item) => new ObjectId(item));
       }
-      if (neIdList.length > 0) {
+      if (neIdList && neIdList.length > 0) {
         idQuery._id.$nin = neIdList.map((item) => new ObjectId(item));
       }
       query.$or.push(idQuery);

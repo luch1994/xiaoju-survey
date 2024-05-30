@@ -91,14 +91,14 @@ export class SurveyMetaController {
       try {
         filter = getFilter(JSON.parse(decodeURIComponent(value.filter)));
       } catch (error) {
-        console.log(error);
+        this.logger.error(error.message, { req });
       }
     }
     if (value.order) {
       try {
         order = order = getOrder(JSON.parse(decodeURIComponent(value.order)));
       } catch (error) {
-        console.log(error);
+        this.logger.error(error.message, { req });
       }
     }
     const userId = req.user._id.toString();

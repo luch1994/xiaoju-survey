@@ -60,7 +60,10 @@ export class WorkspaceController {
   async create(@Body() workspace: CreateWorkspaceDto, @Request() req) {
     const { value, error } = CreateWorkspaceDto.validate(workspace);
     if (error) {
-      req.logger.error(`CreateWorkspaceDto validate failed: ${error.message}`);
+      this.logger.error(
+        `CreateWorkspaceDto validate failed: ${error.message}`,
+        { req },
+      );
       throw new HttpException(
         `参数错误: 请联系管理员`,
         EXCEPTION_CODE.PARAMETER_ERROR,

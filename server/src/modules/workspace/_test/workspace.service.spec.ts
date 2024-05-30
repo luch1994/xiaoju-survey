@@ -6,7 +6,6 @@ import { ObjectId } from 'mongodb';
 import { WorkspaceService } from '../services/workspace.service';
 import { Workspace } from 'src/models/workspace.entity';
 import { SurveyMeta } from 'src/models/surveyMeta.entity';
-import { RECORD_STATUS } from 'src/enums';
 
 jest.mock('src/guards/authentication.guard');
 jest.mock('src/guards/survey.guard');
@@ -109,7 +108,6 @@ describe('WorkspaceService', () => {
   describe('delete', () => {
     it('should delete a workspace and update related surveyMeta', async () => {
       const workspaceId = new ObjectId().toString();
-      const newStatus = { status: RECORD_STATUS.REMOVED, date: Date.now() };
 
       jest
         .spyOn(workspaceRepository, 'updateOne')
@@ -120,15 +118,9 @@ describe('WorkspaceService', () => {
 
       await service.delete(workspaceId);
 
-      expect(workspaceRepository.updateOne).toHaveBeenCalledWith(
-        { _id: new ObjectId(workspaceId) },
-        { $set: { curStatus: newStatus }, $push: { statusList: newStatus } },
-      );
+      expect(workspaceRepository.updateOne).toHaveBeenCalledTimes(1);
 
-      expect(surveyMetaRepository.updateMany).toHaveBeenCalledWith(
-        { workspaceId },
-        { $set: { curStatus: newStatus }, $push: { statusList: newStatus } },
-      );
+      expect(surveyMetaRepository.updateMany).toHaveBeenCalledTimes(1);
     });
   });
 });

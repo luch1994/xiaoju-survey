@@ -43,7 +43,7 @@ export class CollaboratorController {
     private readonly logger: Logger,
     private readonly userService: UserService,
     private readonly surveyMetaService: SurveyMetaService,
-    private workspaceMemberServie: WorkspaceMemberService,
+    private readonly workspaceMemberServie: WorkspaceMemberService,
   ) {}
 
   @Get('getPermissionList')
