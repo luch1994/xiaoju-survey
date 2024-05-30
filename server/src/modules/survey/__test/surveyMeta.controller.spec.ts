@@ -94,65 +94,66 @@ describe('SurveyMetaController', () => {
       curPage: 1,
       pageSize: 10,
     };
+    const userId = new ObjectId().toString();
     const req = {
       user: {
         username: 'test-user',
+        _id: new ObjectId(userId),
       },
     };
 
-    try {
-      jest
-        .spyOn(surveyMetaService, 'getSurveyMetaList')
-        .mockImplementation(() => {
-          const date = new Date().getTime();
-          return Promise.resolve({
-            count: 10,
-            data: [
-              {
-                id: '1',
-                createDate: date,
-                updateDate: date,
-                curStatus: {
-                  date: date,
-                },
-              },
-            ],
-          });
-        });
-
-      const result = await controller.getList(queryInfo, req);
-
-      expect(result).toEqual({
-        code: 200,
-        data: {
+    jest
+      .spyOn(surveyMetaService, 'getSurveyMetaList')
+      .mockImplementation(() => {
+        const date = new Date().getTime();
+        return Promise.resolve({
           count: 10,
-          data: expect.arrayContaining([
-            expect.objectContaining({
-              createDate: expect.stringMatching(
+          data: [
+            {
+              _id: new ObjectId(),
+              createDate: date,
+              updateDate: date,
+              curStatus: {
+                date: date,
+              },
+            },
+          ],
+        });
+      });
+
+    const result = await controller.getList(queryInfo, req);
+
+    expect(result).toEqual({
+      code: 200,
+      data: {
+        count: 10,
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            createDate: expect.stringMatching(
+              /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
+            ),
+            updateDate: expect.stringMatching(
+              /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
+            ),
+            curStatus: expect.objectContaining({
+              date: expect.stringMatching(
                 /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
               ),
-              updateDate: expect.stringMatching(
-                /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
-              ),
-              curStatus: expect.objectContaining({
-                date: expect.stringMatching(
-                  /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
-                ),
-              }),
             }),
-          ]),
-        },
-      });
-      expect(surveyMetaService.getSurveyMetaList).toHaveBeenCalledWith({
-        pageNum: queryInfo.curPage,
-        pageSize: queryInfo.pageSize,
-        username: req.user.username,
-        filter: {},
-        order: {},
-      });
-    } catch (error) {
-      console.log(error);
-    }
+          }),
+        ]),
+      },
+    });
+    expect(surveyMetaService.getSurveyMetaList).toHaveBeenCalledWith({
+      pageNum: queryInfo.curPage,
+      pageSize: queryInfo.pageSize,
+      username: req.user.username,
+      filter: {},
+      order: {},
+      surveyIdList: [],
+      userId,
+      workspaceId: undefined,
+    });
   });
 
   it('should get survey meta list with filter and order', async () => {
@@ -171,26 +172,26 @@ describe('SurveyMetaController', () => {
       ]),
       order: JSON.stringify([{ field: 'createDate', value: -1 }]),
     };
+    const userId = new ObjectId().toString();
     const req = {
       user: {
         username: 'test-user',
-        _id: new ObjectId(),
+        _id: new ObjectId(userId),
       },
     };
 
-    try {
-      const result = await controller.getList(queryInfo, req);
+    const result = await controller.getList(queryInfo, req);
 
-      expect(result.code).toEqual(200);
-      expect(surveyMetaService.getSurveyMetaList).toHaveBeenCalledWith({
-        pageNum: queryInfo.curPage,
-        pageSize: queryInfo.pageSize,
-        username: req.user.username,
-        filter: { surveyType: 'normal', title: { $regex: 'hahah' } },
-        order: { createDate: -1 },
-      });
-    } catch (error) {
-      console.log(error);
-    }
+    expect(result.code).toEqual(200);
+    expect(surveyMetaService.getSurveyMetaList).toHaveBeenCalledWith({
+      pageNum: queryInfo.curPage,
+      pageSize: queryInfo.pageSize,
+      username: req.user.username,
+      surveyIdList: [],
+      userId,
+      filter: { surveyType: 'normal', title: { $regex: 'hahah' } },
+      order: { createDate: -1 },
+      workspaceId: undefined,
+    });
   });
 });
