@@ -157,6 +157,7 @@ export function handleAggretionData({ dataMap, item }) {
             count: aggregationMap?.[num]?.count || 0,
           };
         }),
+        submitionCount: item.data.submitionCount,
         summary,
       },
     };
