@@ -315,8 +315,15 @@ export class CollaboratorController {
     const userId = user._id.toString();
     const surveyId = query.surveyId;
     const surveyMeta = await this.surveyMetaService.getSurveyById({ surveyId });
-    console.log({ surveyMeta: surveyMeta });
-    if (surveyMeta?.ownerId === userId) {
+
+    if (!surveyMeta) {
+      throw new HttpException('问卷不存在', EXCEPTION_CODE.SURVEY_NOT_FOUND);
+    }
+
+    if (
+      surveyMeta?.ownerId === userId ||
+      surveyMeta?.owner === req.user.username
+    ) {
       return {
         code: 200,
         data: {
