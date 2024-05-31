@@ -148,13 +148,13 @@ export class DataStatisticService {
       return {
         field,
         data: {
-          aggregation: transformedData[field].map((optionItem) => {
+          aggregation: (transformedData?.[field] || []).map((optionItem) => {
             return {
               id: optionItem.data[field],
               count: optionItem.count,
             };
           }),
-          submitionCount: submitionCountMap[field],
+          submitionCount: submitionCountMap?.[field] || 0,
         },
       };
     });
