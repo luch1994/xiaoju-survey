@@ -16,7 +16,7 @@ export class CollaboratorDto {
       SURVEY_PERMISSION.SURVEY_RESPONSE_MANAGE,
     ],
   })
-  permissions: Array<number>;
+  permissions: Array<string>;
 }
 
 export class BatchSaveCollaboratorDto {

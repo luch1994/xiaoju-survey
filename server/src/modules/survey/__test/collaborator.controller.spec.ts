@@ -10,7 +10,11 @@ import { UserService } from 'src/modules/auth/services/user.service';
 import { ObjectId } from 'mongodb';
 import { SurveyMetaService } from '../services/surveyMeta.service';
 import { WorkspaceMemberService } from 'src/modules/workspace/services/workspaceMember.service';
-import { SURVEY_PERMISSION } from 'src/enums/surveyPermission';
+import {
+  SURVEY_PERMISSION,
+  SURVEY_PERMISSION_DESCRIPTION,
+} from 'src/enums/surveyPermission';
+import { BatchSaveCollaboratorDto } from '../dto/batchSaveCollaborator.dto';
 
 jest.mock('src/guards/authentication.guard');
 jest.mock('src/guards/survey.guard');
@@ -34,12 +38,18 @@ describe('CollaboratorController', () => {
             changeUserPermission: jest.fn(),
             deleteCollaborator: jest.fn(),
             getCollaborator: jest.fn(),
+            batchDeleteBySurveyId: jest.fn(),
+            batchCreate: jest.fn(),
+            batchDelete: jest.fn(),
+            updateById: jest.fn(),
+            batchSaveCollaborator: jest.fn(),
           },
         },
         {
           provide: Logger,
           useValue: {
             error: jest.fn(),
+            info: jest.fn(),
           },
         },
         {
@@ -110,6 +120,59 @@ describe('CollaboratorController', () => {
         permissions: [SURVEY_PERMISSION.SURVEY_CONF_MANAGE],
       };
       const req = { user: { _id: 'userId' } };
+
+      await expect(controller.addCollaborator(reqBody, req)).rejects.toThrow(
+        HttpException,
+      );
+    });
+
+    it('should throw an exception if user does not exist', async () => {
+      const reqBody: CreateCollaboratorDto = {
+        surveyId: 'surveyId',
+        userId: new ObjectId().toString(),
+        permissions: [SURVEY_PERMISSION.SURVEY_CONF_MANAGE],
+      };
+      const req = {
+        user: { _id: 'userId' },
+        surveyMeta: { ownerId: new ObjectId().toString() },
+      };
+
+      jest.spyOn(userService, 'getUserById').mockResolvedValue(null);
+
+      await expect(controller.addCollaborator(reqBody, req)).rejects.toThrow(
+        HttpException,
+      );
+    });
+
+    it('should throw an exception if user is the survey owner', async () => {
+      const userId = new ObjectId().toString();
+      const reqBody: CreateCollaboratorDto = {
+        surveyId: 'surveyId',
+        userId: userId,
+        permissions: [SURVEY_PERMISSION.SURVEY_CONF_MANAGE],
+      };
+      const req = { user: { _id: 'userId' }, surveyMeta: { ownerId: userId } };
+
+      await expect(controller.addCollaborator(reqBody, req)).rejects.toThrow(
+        HttpException,
+      );
+    });
+
+    it('should throw an exception if user is already a collaborator', async () => {
+      const userId = new ObjectId().toString();
+      const reqBody: CreateCollaboratorDto = {
+        surveyId: 'surveyId',
+        userId: userId,
+        permissions: [SURVEY_PERMISSION.SURVEY_CONF_MANAGE],
+      };
+      const req = {
+        user: { _id: 'userId' },
+        surveyMeta: { ownerId: new ObjectId().toString() },
+      };
+
+      jest
+        .spyOn(collaboratorService, 'getCollaborator')
+        .mockResolvedValue({} as unknown as Collaborator);
 
       await expect(controller.addCollaborator(reqBody, req)).rejects.toThrow(
         HttpException,
@@ -214,6 +277,86 @@ describe('CollaboratorController', () => {
       await expect(controller.deleteCollaborator(query, req)).rejects.toThrow(
         HttpException,
       );
+      expect(logger.error).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // 新增的测试方法
+  describe('getPermissionList', () => {
+    it('should return the permission list', async () => {
+      const result = Object.values(SURVEY_PERMISSION_DESCRIPTION);
+
+      const response = await controller.getPermissionList();
+
+      expect(response).toEqual({
+        code: 200,
+        data: result,
+      });
+    });
+  });
+
+  describe('batchSaveCollaborator', () => {
+    it('should save collaborators in batch successfully', async () => {
+      const reqBody: BatchSaveCollaboratorDto = {
+        surveyId: '',
+        collaborators: [
+          { userId: '', permissions: [SURVEY_PERMISSION.SURVEY_CONF_MANAGE] },
+        ],
+      };
+      const req = { user: { _id: 'userId' } };
+      const result = [{ _id: 'collaboratorId' }];
+
+      const response = await controller.batchSaveCollaborator(reqBody, req);
+
+      expect(response).toEqual({
+        code: 200,
+        data: result,
+      });
+    });
+
+    it('should throw an exception if validation fails', async () => {
+      const reqBody: BatchSaveCollaboratorDto = {
+        surveyId: '',
+        collaborators: [
+          {
+            userId: '',
+            permissions: [SURVEY_PERMISSION.SURVEY_RESPONSE_MANAGE],
+          },
+        ],
+      };
+      const req = { user: { _id: 'userId' } };
+
+      await expect(
+        controller.batchSaveCollaborator(reqBody, req),
+      ).rejects.toThrow(HttpException);
+      expect(logger.error).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getUserSurveyPermissions', () => {
+    it('should return user survey permissions successfully', async () => {
+      const query = { surveyId: 'surveyId', userId: 'userId' };
+      const req = { user: { _id: 'userId' } };
+      const result = [
+        SURVEY_PERMISSION.SURVEY_CONF_MANAGE,
+        SURVEY_PERMISSION.SURVEY_COOPERATION_MANAGE,
+      ];
+
+      const response = await controller.getUserSurveyPermissions(query, req);
+
+      expect(response).toEqual({
+        code: 200,
+        data: result,
+      });
+    });
+
+    it('should throw an exception if validation fails', async () => {
+      const query = { surveyId: '', userId: '' };
+      const req = { user: { _id: 'userId' } };
+
+      await expect(
+        controller.getUserSurveyPermissions(query, req),
+      ).rejects.toThrow(HttpException);
       expect(logger.error).toHaveBeenCalledTimes(1);
     });
   });
