@@ -41,12 +41,16 @@ import { PluginManagerProvider } from './securityPlugin/pluginManager.provider';
 import { LogRequestMiddleware } from './middlewares/logRequest.middleware';
 import { PluginManager } from './securityPlugin/pluginManager';
 import { Logger } from './logger';
+
 import { DownloadTask } from './models/downloadTask.entity';
 import { Session } from './models/session.entity';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({}),
+    ConfigModule.forRoot({
+      envFilePath: `.env.${process.env.NODE_ENV}`, // 根据 NODE_ENV 动态加载对应的 .env 文件
+      isGlobal: true, // 使配置模块在应用的任何地方可用
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
