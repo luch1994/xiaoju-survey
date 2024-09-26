@@ -1,4 +1,6 @@
 import fs from 'fs-extra'
+import axios from 'axios'
+
 const fsa = fs.promises
 
 process.env.XIAOJU_SURVEY_REPORT = 'true'
@@ -32,7 +34,15 @@ const report = async () => {
   const res = await readData('./package.json')
 
   // 上报
-  console.log(1121212121, process.env.XIAOJU_SURVEY_REPORT, res)
+  fetch &&
+    fetch('https://xiaojusurveysrc.didi.cn/reportSourceData', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json, */*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(res)
+    }).catch(() => {})
 }
 
 report()

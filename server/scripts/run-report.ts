@@ -1,5 +1,6 @@
 import fs, { promises as fsa } from 'fs-extra';
 import path from 'path';
+import fetch from 'node-fetch';
 
 interface PackageJson {
   type?: string;
@@ -50,5 +51,14 @@ const readData = async (directory: string): Promise<PackageJson | null> => {
   const res = await readData(path.join(process.cwd()));
 
   // 上报
-  console.log(1121212121, res);
+  fetch('https://xiaojusurveysrc.didi.cn/reportSourceData', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json, */*',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(res),
+  }).catch((e) => {
+    console.log(99999, e);
+  });
 })();
