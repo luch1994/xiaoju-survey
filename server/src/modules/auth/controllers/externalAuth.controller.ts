@@ -194,18 +194,10 @@ export class ExternalAuthController {
 
     let token;
     try {
-      token = await this.authService.generateToken(
-        {
-          username: user.username,
-          _id: user._id.toString(),
-        },
-        {
-          secret: this.configService.get<string>('XIAOJU_SURVEY_JWT_SECRET'),
-          expiresIn: this.configService.get<string>(
-            'XIAOJU_SURVEY_JWT_EXPIRES_IN',
-          ),
-        },
-      );
+      token = await this.authService.generateToken({
+        username: user.username,
+        _id: user._id.toString(),
+      });
       // 验证过的验证码要删掉，防止被别人保存重复调用
     } catch (error) {
       throw new Error('generateToken erro:' + error.message);
@@ -242,18 +234,10 @@ export class ExternalAuthController {
     });
     let token;
     try {
-      token = await this.authService.generateToken(
-        {
-          username: user.username,
-          _id: user._id.toString(),
-        },
-        {
-          secret: this.configService.get<string>('XIAOJU_SURVEY_JWT_SECRET'),
-          expiresIn: this.configService.get<string>(
-            'XIAOJU_SURVEY_JWT_EXPIRES_IN',
-          ),
-        },
-      );
+      token = await this.authService.generateToken({
+        username: user.username,
+        _id: user._id.toString(),
+      });
       // 验证过的验证码要删掉，防止被别人保存重复调用
     } catch (error) {
       throw new Error('generateToken erro:' + error.message);
@@ -304,18 +288,10 @@ export class ExternalAuthController {
       const existingUser = await this.userService.getUserById(
         existsExternalUser.userId,
       );
-      const jwt = await this.authService.generateToken(
-        {
-          _id: existingUser._id.toString(),
-          username: existingUser.username,
-        },
-        {
-          secret: this.configService.get<string>('XIAOJU_SURVEY_JWT_SECRET'),
-          expiresIn: this.configService.get<string>(
-            'XIAOJU_SURVEY_JWT_EXPIRES_IN',
-          ),
-        },
-      );
+      const jwt = await this.authService.generateToken({
+        _id: existingUser._id.toString(),
+        username: existingUser.username,
+      });
       const redirectUrl = generateUrl('/management/auth/callback', {
         token: jwt,
         username: existingUser.username,
@@ -354,18 +330,10 @@ export class ExternalAuthController {
       }
       await this.userService.saveUser(userInfo);
     }
-    const jwt = await this.authService.generateToken(
-      {
-        _id: userInfo._id.toString(),
-        username: userInfo.username,
-      },
-      {
-        secret: this.configService.get<string>('XIAOJU_SURVEY_JWT_SECRET'),
-        expiresIn: this.configService.get<string>(
-          'XIAOJU_SURVEY_JWT_EXPIRES_IN',
-        ),
-      },
-    );
+    const jwt = await this.authService.generateToken({
+      _id: userInfo._id.toString(),
+      username: userInfo.username,
+    });
     const redirectUrl = generateUrl('/management/auth/callback', {
       token: jwt,
       username: userInfo.username,
