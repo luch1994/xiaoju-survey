@@ -27,6 +27,7 @@ import { PERMISSION as WORKSPACE_PERMISSION } from 'src/enums/workspace';
 
 import { GetSurveyListDto } from '../dto/getSurveyMetaList.dto';
 import { CollaboratorService } from '../services/collaborator.service';
+import { GROUP_STATE } from 'src/enums/surveyGroup';
 
 @ApiTags('survey')
 @Controller('/api/survey')
@@ -48,6 +49,7 @@ export class SurveyMetaController {
       title: Joi.string().required(),
       remark: Joi.string().allow(null, '').default(''),
       surveyId: Joi.string().required(),
+      groupId: Joi.string().allow(null, ''),
     }).validate(reqBody, { allowUnknown: true });
 
     if (error) {
@@ -57,6 +59,8 @@ export class SurveyMetaController {
     const survey = req.surveyMeta;
     survey.title = value.title;
     survey.remark = value.remark;
+    survey.groupId =
+      value.groupId && value.groupId !== '' ? value.groupId : null;
 
     await this.surveyMetaService.editSurveyMeta({
       survey,
@@ -86,7 +90,7 @@ export class SurveyMetaController {
       this.logger.error(error.message);
       throw new HttpException('参数有误', EXCEPTION_CODE.PARAMETER_ERROR);
     }
-    const { curPage, pageSize, workspaceId } = value;
+    const { curPage, pageSize, workspaceId, groupId } = value;
     let filter = {},
       order = {};
     if (value.filter) {
@@ -104,8 +108,11 @@ export class SurveyMetaController {
       }
     }
     const userId = req.user._id.toString();
-    const cooperationList =
-      await this.collaboratorService.getCollaboratorListByUserId({ userId });
+    let cooperationList = [];
+    if (groupId === GROUP_STATE.ALL) {
+      cooperationList =
+        await this.collaboratorService.getCollaboratorListByUserId({ userId });
+    }
     const cooperSurveyIdMap = cooperationList.reduce((pre, cur) => {
       pre[cur.surveyId] = cur;
       return pre;
@@ -120,6 +127,7 @@ export class SurveyMetaController {
       filter,
       order,
       workspaceId,
+      groupId,
       surveyIdList,
     });
     return {

@@ -2,23 +2,32 @@
   <div class="question-list-root">
     <TopNav></TopNav>
     <div class="content-wrap">
-      <SliderBar :menus="spaceMenus" @select="handleSpaceSelect" />
+      <SliderBar :menus="spaceMenus" :activeValue="activeValue" @select="handleSpaceSelect" />
       <div class="list-content">
         <div class="top">
           <h2>
-            {{ spaceType === SpaceType.Group ? '团队空间' : currentTeamSpace?.name || '问卷列表' }}
+            {{ tableTitle }}
           </h2>
           <div class="operation">
             <el-button
               class="btn create-btn"
               type="default"
               @click="onSpaceCreate"
-              v-if="spaceType == SpaceType.Group"
+              v-if="menuType === MenuType.SpaceGroup && !workSpaceId"
             >
               <i class="iconfont icon-chuangjian"></i>
               <span>创建团队空间</span>
             </el-button>
-            <el-button type="default" class="btn" @click="onSetGroup" v-if="workSpaceId">
+            <el-button
+              class="btn create-btn"
+              type="default"
+              @click="onGroupCreate"
+              v-if="menuType === MenuType.PersonalGroup && !groupId"
+            >
+              <i class="iconfont icon-chuangjian"></i>
+              <span>创建分组</span>
+            </el-button>
+            <el-button type="default" class="btn" @click="onSetGroup" v-if="workSpaceId && menuType === MenuType.SpaceGroup">
               <i class="iconfont icon-shujuliebiao"></i>
               <span>团队管理</span>
             </el-button>
@@ -26,7 +35,7 @@
               class="btn create-btn"
               type="default"
               @click="onCreate"
-              v-if="spaceType !== SpaceType.Group"
+              v-if="workSpaceId || groupId"
             >
               <i class="iconfont icon-chuangjian"></i>
               <span>创建问卷</span>
@@ -38,7 +47,8 @@
           :data="surveyList"
           :total="surveyTotal"
           @refresh="fetchSurveyList"
-          v-if="spaceType !== SpaceType.Group"
+          ref="listRef"
+          v-if="workSpaceId || groupId"
         ></BaseList>
         <SpaceList
           ref="spaceListRef"
@@ -46,15 +56,30 @@
           :loading="spaceLoading"
           :data="workSpaceList"
           :total="workSpaceListTotal"
-          v-if="spaceType === SpaceType.Group"
+          v-if="menuType === MenuType.SpaceGroup && !workSpaceId"
         ></SpaceList>
+        <GroupList
+          ref="groupListRef"
+          @refresh="fetchGroupList"
+          :loading="groupLoading"
+          :data="groupList"
+          :total="groupListTotal"
+          v-if="menuType === MenuType.PersonalGroup && !groupId"
+        ></GroupList>
       </div>
     </div>
     <SpaceModify
       v-if="showSpaceModify"
       :type="modifyType"
       :visible="showSpaceModify"
-      @on-close-codify="onCloseModify"
+      @on-close-codify="onCloseSpaceModify"
+      @update-data="onCloseModifyInTeamWork"
+    />
+    <GroupModify
+      v-if="showGroupModify"
+      type="add"
+      :visible="showGroupModify"
+      @on-close-codify="onCloseGroupModify"
     />
   </div>
 </template>
@@ -65,54 +90,92 @@ import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import BaseList from './components/BaseList.vue'
 import SpaceList from './components/SpaceList.vue'
+import GroupList from './components/GroupList.vue'
 import SliderBar from './components/SliderBar.vue'
 import SpaceModify from './components/SpaceModify.vue'
+import GroupModify from './components/GroupModify.vue'
 import TopNav from '@/management/components/TopNav.vue'
-import { SpaceType } from '@/management/utils/workSpace'
+import {  MenuType } from '@/management/utils/workSpace'
+
 import { useWorkSpaceStore } from '@/management/stores/workSpace'
 import { useSurveyListStore } from '@/management/stores/surveyList'
+import { type IWorkspace } from '@/management/utils/workSpace'
 
 const workSpaceStore = useWorkSpaceStore()
 const surveyListStore = useSurveyListStore()
 
 const { surveyList, surveyTotal } = storeToRefs(surveyListStore)
-const { spaceMenus, workSpaceId, spaceType, workSpaceList, workSpaceListTotal } =
+const { spaceMenus, workSpaceId, groupId, menuType, workSpaceList, workSpaceListTotal, groupList, groupListTotal } =
   storeToRefs(workSpaceStore)
 const router = useRouter()
+
+const tableTitle = computed(() => {
+  if(menuType.value === MenuType.PersonalGroup && !groupId.value) {
+    return '我的空间'
+  } else if (menuType.value === MenuType.SpaceGroup && !workSpaceId.value) {
+    return '团队空间'
+  } else {
+    return currentTeamSpace.value?.name || '问卷列表';
+  }
+})
+
+interface BaseListInstance {
+  resetCurrentPage: () => void;
+}
+
+const activeValue = ref('')
+const listRef = ref<BaseListInstance | null>(null);
 
 const loading = ref(false)
 
 const spaceListRef = ref<any>(null)
 const spaceLoading = ref(false)
+const groupLoading = ref(false)
 
 const fetchSpaceList = async (params?: any) => {
   spaceLoading.value = true
   workSpaceStore.changeWorkSpace('')
-  workSpaceStore.getSpaceList(params)
+  await workSpaceStore.getSpaceList(params)
   spaceLoading.value = false
 }
 
-const handleSpaceSelect = (id: SpaceType | string) => {
-  if (id === spaceType.value || id === workSpaceId.value) {
+const fetchGroupList = async (params?: any) => {
+  groupLoading.value = true
+  workSpaceStore.changeWorkSpace('')
+  await workSpaceStore.getGroupList(params)
+  groupLoading.value = false
+}
+
+const handleSpaceSelect = async (id: string) => {
+  if (activeValue.value === id) {
     return void 0
   }
-
+  activeValue.value = id;
   switch (id) {
-    case SpaceType.Personal:
-      workSpaceStore.changeSpaceType(SpaceType.Personal)
+    case MenuType.PersonalGroup:
+      workSpaceStore.changeMenuType(MenuType.PersonalGroup)
       workSpaceStore.changeWorkSpace('')
+      await fetchGroupList()
       break
-    case SpaceType.Group:
-      workSpaceStore.changeSpaceType(SpaceType.Group)
+    case MenuType.SpaceGroup:
+      workSpaceStore.changeMenuType(MenuType.SpaceGroup)
       workSpaceStore.changeWorkSpace('')
-      fetchSpaceList()
+      await fetchSpaceList()
       break
-    default:
-      workSpaceStore.changeSpaceType(SpaceType.Teamwork)
-      workSpaceStore.changeWorkSpace(id)
-      break
+    default: {
+      const parentMenu = spaceMenus.value.find((parent: any) => parent.children.find((children: any) => children.id.toString() === id))
+      if(parentMenu != undefined) {
+        workSpaceStore.changeMenuType(parentMenu.id)
+        if(parentMenu.id === MenuType.PersonalGroup) {
+          workSpaceStore.changeGroup(id)
+        } else if (parentMenu.id === MenuType.SpaceGroup) {
+          workSpaceStore.changeWorkSpace(id)
+        }
+      }
+      listRef?.value?.resetCurrentPage();
+      break;
+    }
   }
-  fetchSurveyList()
 }
 
 const fetchSurveyList = async (params?: any) => {
@@ -130,9 +193,12 @@ const fetchSurveyList = async (params?: any) => {
   loading.value = false
 }
 
-onMounted(() => {
-  fetchSpaceList()
-  fetchSurveyList()
+onMounted(async () => {
+  await fetchGroupList()
+  await fetchSpaceList()
+  activeValue.value = 'all'
+  workSpaceStore.changeGroup('all')
+  await fetchSurveyList()
 })
 
 const modifyType = ref('add')
@@ -149,7 +215,24 @@ const onSetGroup = async () => {
   showSpaceModify.value = true
 }
 
-const onCloseModify = (type: string) => {
+const onCloseModifyInTeamWork = (data: IWorkspace) => {
+  if (activeValue.value === MenuType.SpaceGroup) {
+    const currentData = workSpaceList.value.find((item) => item._id === data._id)
+    if (currentData) {
+      currentData.name = data.name
+      currentData.memberTotal = data.members.length
+      currentData.description = data.description
+    }
+    const currentMenus: any = spaceMenus.value?.[1]?.children?.find(
+      (item: { id: string; name: string }) => item.id === data._id
+    )
+    if (currentMenus) {
+      currentMenus.name = data.name
+    }
+  }
+}
+
+const onCloseSpaceModify = (type: string) => {
   showSpaceModify.value = false
   if (type === 'update' && spaceListRef.value) {
     fetchSpaceList()
@@ -160,6 +243,18 @@ const onSpaceCreate = () => {
   modifyType.value = 'add'
   showSpaceModify.value = true
 }
+
+const showGroupModify = ref<boolean>(false)
+
+const onCloseGroupModify = () => {
+  showGroupModify.value = false
+  fetchGroupList()
+}
+
+const onGroupCreate = () => {
+  showGroupModify.value = true
+}
+
 const onCreate = () => {
   router.push('/create')
 }
