@@ -144,8 +144,7 @@ export const useSurveyStore = defineStore('survey', () => {
     whiteData.value = option.whiteData
     pageConf.value = option.pageConf
 
-    // 获取已投票数据
-    questionStore.initVoteData()
+    questionStore.initOptionCountInfo()
 
   }
 
