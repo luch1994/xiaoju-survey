@@ -140,7 +140,7 @@ export class CounterService {
             optionCountData['total']++;
           }
           const dataToSave = Object.assign(
-            { _id: counter._id },
+            { _id: counter?._id },
             {
               key: field,
               surveyPath,
